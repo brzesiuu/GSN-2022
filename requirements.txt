@@ -6,3 +6,4 @@ torch
 torchvision
 torchaudio
 pytorch-cuda=11.7
+omegaconf
