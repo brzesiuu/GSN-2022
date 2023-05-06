@@ -5,13 +5,15 @@ import torch
 from torch.utils.data import Dataset
 
 from . import FreiPoseConfig
-from utils import PosePath, file_utils, conversion_utils
+from utils import PosePath, file_utils
+from decorators.conversion_decorators import heatmaps, keypoints_2d
 
 
 class FreiPoseDataset(Dataset):
     """
     Dataset for FreiPose experiment.
     """
+
     def __init__(self, config: FreiPoseConfig, device: str = 'cuda:0') -> None:
         """
         Class constructor
@@ -35,10 +37,15 @@ class FreiPoseDataset(Dataset):
     def __len__(self):
         return len(self._image_paths)
 
+    @keypoints_2d
+    @heatmaps(gaussian_kernel=3)
     def __getitem__(self, idx: int) -> (torch.Tensor, torch.Tensor):
         coords = np.array(file_utils.load_config(self._xyz_path)[idx % 32560], dtype=np.float32)
         camera_matrix = np.array(file_utils.load_config(self._camera_matrix_path)[idx % 32560], dtype=np.float32)
 
         image = cv.imread(str(self._image_paths[idx]))
-        heatmaps = conversion_utils.get_heatmaps(coords, camera_matrix, image.shape)
-        return self._transform(image), torch.Tensor(heatmaps)
+        return {
+            'image': self._transform(image),
+            'keypoints_3d_local': coords,
+            'camera_matrix': camera_matrix
+        }
