@@ -1,0 +1,7 @@
+_target_: datasets.FreiPoseDataset
+folder_path: 'C:\\Users\\filip\\Downloads\\FreiHAND_pub_v2'
+set_type: 'training'
+image_extension: '.jpg'
+transform:
+  _target_: transforms.DatasetTransform
+  value: FREI_POSE

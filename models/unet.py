@@ -23,7 +23,7 @@ class ConvBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, out_channels):
+    def __init__(self, out_channels, num_features):
         super().__init__()
         self._conv_down_1 = ConvBlock(3, out_channels)
         self._conv_down_2 = ConvBlock(out_channels, out_channels * 2)
@@ -34,7 +34,7 @@ class UNet(nn.Module):
         self._conv_up_2 = ConvBlock(out_channels * 6, out_channels * 2)
         self._conv_up_3 = ConvBlock(out_channels * 3, out_channels)
 
-        self._conv_heatmap = nn.Sequential(nn.Conv2d(out_channels, 21, 3, padding='same'),
+        self._conv_heatmap = nn.Sequential(nn.Conv2d(out_channels, num_features, 3, padding='same'),
                                            nn.Sigmoid())
 
         self._max_pool = nn.MaxPool2d(2)

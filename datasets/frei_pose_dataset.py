@@ -1,10 +1,12 @@
+from enum import Enum
+
 import numpy as np
 import cv2 as cv
 import torch
 
 from torch.utils.data import Dataset
+from torchvision.transforms import transforms
 
-from . import FreiPoseConfig
 from utils import PosePath, file_utils
 from decorators.conversion_decorators import heatmaps, keypoints_2d
 
@@ -14,25 +16,20 @@ class FreiPoseDataset(Dataset):
     Dataset for FreiPose experiment.
     """
 
-    def __init__(self, config: FreiPoseConfig, device: str = 'cuda:0') -> None:
+    def __init__(self, folder_path, set_type='training', image_extension='.jpg',
+                 transform=transforms.Compose([transforms.ToTensor()])) -> None:
         """
         Class constructor
-        :param config: Config with all necessary parameters for proper dataset creation
-        :type config: FreiPoseConfig
-        :param device: Device on which dataset will be placed during training
-        :type device: str
         """
-        self._device = torch.device(device)
+        self._path = folder_path
+        self._set_type = set_type
 
-        self._path = config.folder_path
-        self._set_type = config.set_type
-
-        self._image_paths = PosePath(self._path).joinpath('training', 'rgb').pose_glob('*' + config.image_extension,
+        self._image_paths = PosePath(self._path).joinpath('training', 'rgb').pose_glob('*' + image_extension,
                                                                                        natsort=True, to_list=True)
         self._camera_matrix_path = PosePath(self._path).joinpath(f'{self._set_type}_K.json')
         self._xyz_path = PosePath(self._path).joinpath(f'{self._set_type}_xyz.json')
 
-        self._transform = config.transform
+        self._transform = transform if not isinstance(transform, Enum) else transform.value
 
     def __len__(self):
         return len(self._image_paths)
