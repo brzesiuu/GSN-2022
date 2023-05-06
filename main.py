@@ -1,13 +1,18 @@
-from dataset import FreiPoseConfig, FreiPoseDataset
+import hydra
+from hydra.utils import instantiate
+from omegaconf import DictConfig
+
+from datasets import FreiPoseDataset
 from models import UNet
 
 
-def main():
-    config = FreiPoseConfig(folder_path='C:\\Users\\filip\\Downloads\\FreiHAND_pub_v2')
-    dataset = FreiPoseDataset(config)
-    image, heatmaps = dataset[1]
-    net = UNet(16)
-    xd = net(image.unsqueeze(0))
+@hydra.main(version_base=None, config_path="configs", config_name="config")
+def main(cfg: DictConfig) -> None:
+    dataset = instantiate(cfg.dataset)
+    model = instantiate(cfg.model)
+    data = dataset[1]
+    xd = model(data['image'].unsqueeze(0))
+    print(5)
 
 
 if __name__ == '__main__':

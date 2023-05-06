@@ -23,24 +23,23 @@ def project_local_to_uv(points_3d: np.ndarray, camera_matrix: np.ndarray) -> np.
     return uv
 
 
-def get_heatmaps(points_3d: np.ndarray, camera_matrix: np.ndarray, image_size: tuple, gaussian_kernel: int = 3) \
+def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int = 3) \
         -> List[np.ndarray]:
     """
     Generates heatmaps based on given 3D points and camera matrix corresponding to them
-    :param points_3d: Array of 3D points in shape of (N,3)
-    :type points_3d: np.ndarray
-    :param camera_matrix: 3x3 camera matrix
-    :type camera_matrix: np.ndarray
-    :param image_size: 2D size of image
+    :param points_2d: Array of 3D points in shape of (N,3)
+    :type points_2d: np.ndarray
+    :param image_size: 2D/3D size of image
     :type image_size: tuple/list
     :param gaussian_kernel: Size of Gaussian kernel for heatmap generation
     :type gaussian_kernel: int
     :return: List of heatmaps
     :rtype: List[np.ndarray]
     """
-    uv = project_local_to_uv(points_3d, camera_matrix)
+    if len(image_size) > 2:
+        image_size = image_size[-2:]
     heatmaps = []
-    for point_2d in uv:
+    for point_2d in points_2d:
         img = np.zeros(image_size[:2], dtype=np.float32)
         img[round(point_2d[1]), round(point_2d[0])] = 1
         img = cv.GaussianBlur(img, (gaussian_kernel, gaussian_kernel), 0)

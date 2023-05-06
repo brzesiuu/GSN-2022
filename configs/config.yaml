@@ -1,0 +1,6 @@
+defaults:
+  - model: unet
+  - dataset: frei_pose
+  - _self_
+
+debug: true
