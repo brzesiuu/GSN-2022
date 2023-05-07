@@ -1,8 +1,7 @@
 import hydra
-import torch
-import pytorch_lightning as pl
 from hydra.utils import instantiate
 from omegaconf import DictConfig
+import torch
 
 from lignting_modules.frei_pose_data_module import FreiPoseDataModule
 from lignting_modules.frei_pose_module import FreiPoseModule
@@ -10,18 +9,13 @@ from lignting_modules.frei_pose_module import FreiPoseModule
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
 def main(cfg: DictConfig) -> None:
-    optimizer = instantiate(cfg.optimizer)
-    dataset = instantiate(cfg.dataset)
-    model = instantiate(cfg.model)
+    torch.set_float32_matmul_precision('medium')
+    config = instantiate(cfg)
 
-    train_module = FreiPoseModule(model, optimizer, torch.nn.MSELoss(), 'image',
-                                  'heatmaps')
-    data_module = FreiPoseDataModule(5, dataset, 0.9)
+    train_module = FreiPoseModule(config.model, config.optimizer, config.loss, config.input_key, config.output_key)
+    data_module = FreiPoseDataModule(config.batch_size, config.dataset, config.train_ratio)
 
-    trainer = pl.Trainer(max_epochs=50)
-
-    trainer.fit(train_module, data_module)
-    print(5)
+    config.trainer.fit(train_module, data_module)
 
 
 if __name__ == '__main__':

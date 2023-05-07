@@ -21,7 +21,8 @@ class FreiPoseModule(pl.LightningModule):
     def common_step(self, batch, batch_idx):
         x, y = batch[self.input_key], batch[self.output_key]
         outputs = self(x)
-        loss = self.compute_loss(outputs, y)
+        output = outputs[self.output_key]
+        loss = self.compute_loss(output, y)
         return loss, outputs
 
     def common_test_valid_step(self, batch, batch_idx):

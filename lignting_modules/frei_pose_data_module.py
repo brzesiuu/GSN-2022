@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 from torch.utils.data import random_split, DataLoader
+import multiprocessing
 
 
 class FreiPoseDataModule(pl.LightningDataModule):
@@ -11,7 +12,8 @@ class FreiPoseDataModule(pl.LightningDataModule):
                                                             [train_dataset_size, len(dataset) - train_dataset_size])
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,
+                          num_workers=multiprocessing.cpu_count() - 2)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=multiprocessing.cpu_count() - 2)

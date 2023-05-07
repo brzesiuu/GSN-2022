@@ -1,10 +1,6 @@
-from typing import List
-from pathlib import Path
-
 import numpy as np
 import cv2 as cv
-
-from utils import PosePath
+import torch
 
 
 def project_local_to_uv(points_3d: np.ndarray, camera_matrix: np.ndarray) -> np.ndarray:
@@ -46,3 +42,16 @@ def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int 
         img /= img.max()
         heatmaps.append(img)
     return np.array(heatmaps)
+
+
+def get_keypoints_from_heatmaps(heatmaps):
+    indices = []
+    if isinstance(heatmaps, torch.Tensor):
+        heatmaps_tmp = heatmaps.detach().cpu().numpy()
+    else:
+        heatmaps_tmp = heatmaps.copy()
+    for heatmap in heatmaps_tmp:
+        index = np.unravel_index(np.argmax(heatmap, axis=None), heatmap.shape)
+        index = [index[1], index[0]]
+        indices.append(index)
+    return np.array(indices)
