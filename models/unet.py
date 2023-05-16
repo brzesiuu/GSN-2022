@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from decorators.conversion_decorators import keypoints_2d
+
 
 class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -40,6 +42,7 @@ class UNet(nn.Module):
         self._max_pool = nn.MaxPool2d(2)
         self._up_sample = nn.Upsample(scale_factor=2)
 
+    @keypoints_2d
     def forward(self, x):
         conv_down_1 = self._conv_down_1(x)
         conv_down_2 = self._conv_down_2(self._max_pool(conv_down_1))
@@ -49,4 +52,4 @@ class UNet(nn.Module):
         conv_up_2 = self._conv_up_2(torch.cat((self._up_sample(conv_up_1), conv_down_2), dim=1))
         conv_up_3 = self._conv_up_3(torch.cat((self._up_sample(conv_up_2), conv_down_1), dim=1))
         output = self._conv_heatmap(conv_up_3)
-        return output
+        return {'heatmaps': output}

@@ -1,10 +1,6 @@
-from typing import List
-from pathlib import Path
-
 import numpy as np
 import cv2 as cv
-
-from utils import PosePath
+import torch
 
 
 def project_local_to_uv(points_3d: np.ndarray, camera_matrix: np.ndarray) -> np.ndarray:
@@ -24,7 +20,7 @@ def project_local_to_uv(points_3d: np.ndarray, camera_matrix: np.ndarray) -> np.
 
 
 def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int = 3) \
-        -> List[np.ndarray]:
+        -> np.ndarray:
     """
     Generates heatmaps based on given 3D points and camera matrix corresponding to them
     :param points_2d: Array of 3D points in shape of (N,3)
@@ -34,7 +30,7 @@ def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int 
     :param gaussian_kernel: Size of Gaussian kernel for heatmap generation
     :type gaussian_kernel: int
     :return: List of heatmaps
-    :rtype: List[np.ndarray]
+    :rtype: np.ndarray
     """
     if len(image_size) > 2:
         image_size = image_size[-2:]
@@ -45,4 +41,29 @@ def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int 
         img = cv.GaussianBlur(img, (gaussian_kernel, gaussian_kernel), 0)
         img /= img.max()
         heatmaps.append(img)
-    return heatmaps
+    return np.array(heatmaps)
+
+
+def get_keypoints_from_heatmaps(heatmaps):
+    indices = []
+    if isinstance(heatmaps, torch.Tensor):
+        heatmaps_tmp = heatmaps.detach().cpu().numpy()
+    else:
+        heatmaps_tmp = heatmaps.copy()
+
+    if len(heatmaps.shape) == 3:
+        return _get_keypoints_from_heatmaps_single_batch(heatmaps_tmp)
+
+    for heatmap in heatmaps_tmp:
+        indices.append(_get_keypoints_from_heatmaps_single_batch(heatmap))
+    return np.array(indices)
+
+
+def _get_keypoints_from_heatmaps_single_batch(heatmaps):
+    indices = []
+    for heatmap in heatmaps:
+        index = np.unravel_index(np.argmax(heatmap, axis=None), heatmap.shape)
+        index = [index[1], index[0]]
+        indices.append(index)
+    return np.array(indices)
+
