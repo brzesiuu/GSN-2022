@@ -50,8 +50,20 @@ def get_keypoints_from_heatmaps(heatmaps):
         heatmaps_tmp = heatmaps.detach().cpu().numpy()
     else:
         heatmaps_tmp = heatmaps.copy()
+
+    if len(heatmaps.shape) == 3:
+        return _get_keypoints_from_heatmaps_single_batch(heatmaps_tmp)
+
     for heatmap in heatmaps_tmp:
+        indices.append(_get_keypoints_from_heatmaps_single_batch(heatmap))
+    return np.array(indices)
+
+
+def _get_keypoints_from_heatmaps_single_batch(heatmaps):
+    indices = []
+    for heatmap in heatmaps:
         index = np.unravel_index(np.argmax(heatmap, axis=None), heatmap.shape)
         index = [index[1], index[0]]
         indices.append(index)
     return np.array(indices)
+

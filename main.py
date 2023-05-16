@@ -5,6 +5,7 @@ import torch
 
 from lignting_modules.frei_pose_data_module import FreiPoseDataModule
 from lignting_modules.frei_pose_module import FreiPoseModule
+from utils.callbacks import ImagePredictionLogger
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -14,6 +15,11 @@ def main(cfg: DictConfig) -> None:
 
     train_module = FreiPoseModule(config.model, config.optimizer, config.loss, config.input_key, config.output_key)
     data_module = FreiPoseDataModule(config.batch_size, config.dataset, config.train_ratio)
+
+    val_samples = next(iter(data_module.val_dataloader()))
+
+    config.trainer.callbacks.extend([ImagePredictionLogger(val_samples), config.checkpoint_callback])
+    config.trainer.logger = config.logger
 
     config.trainer.fit(train_module, data_module)
 

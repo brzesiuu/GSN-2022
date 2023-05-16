@@ -1,5 +1,5 @@
 _target_: datasets.FreiPoseDataset
-folder_path: 'C:\\Users\\filip\\Downloads\\FreiPoseMini'
+folder_path: 'C:\\datasets\\FreiPoseMini'
 set_type: 'training'
 image_extension: '.jpg'
 transform:

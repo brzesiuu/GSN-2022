@@ -9,7 +9,7 @@ def keypoints_2d(function):
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
         result = function(*args, **kwargs)
-        if 'keypoints_2d' in result:
+        if 'keypoints_2d' in result and result['keypoints_2d'] is not None:
            return result
         if 'keypoints_3d_local' in result and 'camera_matrix' in result:
            result['keypoints_2d'] = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
@@ -31,7 +31,7 @@ def heatmaps(func=None, *, gaussian_kernel=None):
     def wrapper(*args, **kwargs):
 
         result = func(*args, **kwargs)
-        if 'heatmaps' in result:
+        if 'heatmaps' in result and result['heatmaps'] is not None:
             return result
         if 'keypoints_2d' in result:
             uv = result['keypoints_2d']

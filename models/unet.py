@@ -42,6 +42,7 @@ class UNet(nn.Module):
         self._max_pool = nn.MaxPool2d(2)
         self._up_sample = nn.Upsample(scale_factor=2)
 
+    @keypoints_2d
     def forward(self, x):
         conv_down_1 = self._conv_down_1(x)
         conv_down_2 = self._conv_down_2(self._max_pool(conv_down_1))

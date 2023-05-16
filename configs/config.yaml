@@ -16,3 +16,18 @@ output_key: 'heatmaps'
 # Dataset params
 batch_size: 5
 train_ratio: 0.9
+
+# Checkpoint callback
+checkpoint_callback:
+  _target_:  pytorch_lightning.callbacks.ModelCheckpoint
+  monitor: 'val_loss'
+  dirpath: 'model/'
+  filename: 'model-{epoch:02d}-{val_loss:.2f}'
+  save_top_k: 3
+  mode: 'min'
+
+# W&B logger
+logger:
+  _target_: pytorch_lightning.loggers/WandbLogger
+  project: 'pose-estimation'
+  job_type: 'train'
