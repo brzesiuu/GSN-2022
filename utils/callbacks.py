@@ -1,9 +1,12 @@
+import functools
+
 import numpy as np
 from pytorch_lightning import Callback
 import wandb
 
 from transforms import DatasetTransform
 from utils.enums import KeypointsMap
+from utils.losses import PCKLoss
 from utils.visualization import visualize_keypoints
 
 
@@ -33,3 +36,19 @@ class ImagePredictionLogger(Callback):
         trainer.logger.experiment.log({
             "examples": images
         })
+
+
+class PCKCallback(Callback):
+    def __init__(self, val_samples, distance_threshold=10):
+        super().__init__()
+        self.val_imgs = val_samples['image']
+        self.val_predictions = val_samples['keypoints_2d']
+        self.loss = functools.partial(PCKLoss, distance_threshold=distance_threshold)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        # Bring the tensors to CPU
+        val_imgs = self.val_imgs.to(device=pl_module.device)
+        preds = pl_module(val_imgs)
+        pck_loss = self.loss(preds['keypoints_2d'], self.val_predictions)
+
+        pl_module.log('PCK', pck_loss, prog_bar=True)

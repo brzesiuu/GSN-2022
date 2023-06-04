@@ -28,6 +28,6 @@ checkpoint_callback:
 
 # W&B logger
 logger:
-  _target_: pytorch_lightning.loggers/WandbLogger
+  _target_: pytorch_lightning.loggers.WandbLogger
   project: 'pose-estimation'
   job_type: 'train'
