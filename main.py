@@ -24,6 +24,5 @@ def main(cfg: DictConfig) -> None:
 
     config.trainer.fit(train_module, data_module)
 
-
 if __name__ == '__main__':
     main()

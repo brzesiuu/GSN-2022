@@ -17,7 +17,7 @@ def PCKLoss(keypoints_calculated, keypoints_gt, relative_distance_threshold=None
             dists = np.linalg.norm((kp_calc - kp_gt), axis=1)
             num_in_range = np.count_nonzero(dists.flatten() < threshold)
             num_total += num_in_range
-        return num_in_range / keypoints_calculated.shape[0] * keypoints_calculated.shape[1] * 100
+        return num_in_range / (keypoints_calculated.shape[0] * keypoints_calculated.shape[1]) * 100
     else:
         diff = keypoints_gt - keypoints_calculated
         dists = np.linalg.norm(diff, axis=2)
