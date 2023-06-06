@@ -38,7 +38,7 @@ class FreiPoseDataset(Dataset):
 
     def __len__(self):
         # DEBUG
-        return 5000
+        return 1000
         # DEBUG
 
     @keypoints_2d

@@ -66,7 +66,7 @@ def get_keypoints_from_heatmaps(heatmaps):
 def _get_keypoints_from_heatmaps_single_batch(heatmaps):
     indices = []
     for heatmap in heatmaps:
-        heatmap_norm = heatmap / heatmap.max()
+        heatmap_norm = heatmap / heatmap.sum()
         y = np.dot(heatmap_norm.sum(axis=0), np.linspace(0, heatmap.shape[0], heatmap.shape[0]))
         x = np.dot(heatmap_norm.sum(axis=1), np.linspace(0, heatmap.shape[1], heatmap.shape[1]))
         index = [x, y]
