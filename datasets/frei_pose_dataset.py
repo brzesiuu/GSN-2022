@@ -37,9 +37,7 @@ class FreiPoseDataset(Dataset):
         self._transform = transform if not isinstance(transform, Enum) else transform.value
 
     def __len__(self):
-        # DEBUG
-        return 1000
-        # DEBUG
+        return len(self._image_paths)
 
     @keypoints_2d
     @heatmaps(gaussian_kernel=7)

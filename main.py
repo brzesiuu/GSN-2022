@@ -17,9 +17,9 @@ def main(cfg: DictConfig) -> None:
     data_module = FreiPoseDataModule(config.batch_size, config.dataset, config.train_ratio)
 
     val_samples = next(iter(data_module.val_dataloader()))
-
+    train_samples = next(iter(data_module.train_dataloader()))
     config.trainer.callbacks.extend(
-        [ImagePredictionLogger(val_samples), config.checkpoint_callback, PCKCallback(val_samples, 10)])
+        [ImagePredictionLogger(val_samples, train_samples), config.checkpoint_callback, PCKCallback(val_samples, 10)])
     config.trainer.logger = config.logger
 
     config.trainer.fit(train_module, data_module)

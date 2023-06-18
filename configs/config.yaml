@@ -1,7 +1,7 @@
 defaults:
   - model: unet
   - dataset: frei_pose
-  - optimizer: sgd_pose
+  - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
 
@@ -9,7 +9,7 @@ debug: true
 
 # Loss calculation params
 loss:
-  _target_: torch.nn.MSELoss
+  _target_: losses.iou_loss.IoULoss
 input_key: 'image'
 output_key: 'heatmaps'
 

@@ -37,11 +37,11 @@ def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int 
     heatmaps = []
     for point_2d in points_2d:
         img = np.zeros(image_size[:2], dtype=np.float32)
-        if point_2d[0] > image_size[0] - 1:
-            point_2d[0] = image_size[0] - 1
-        if point_2d[1] > image_size[1] - 1:
-            point_2d[1] = image_size[1] - 1
-        img[round(point_2d[1]), round(point_2d[0])] = 1
+        if point_2d[0] > image_size[1] - 1:
+            point_2d[0] = image_size[1] - 1
+        if point_2d[1] > image_size[0] - 1:
+            point_2d[1] = image_size[0] - 1
+        img[round(point_2d[0]), round(point_2d[1])] = 1
         img = cv.GaussianBlur(img, (gaussian_kernel, gaussian_kernel), 0)
         img /= img.max()
         heatmaps.append(img)

@@ -12,14 +12,10 @@ def keypoints_2d(function):
         if 'keypoints_2d' in result and result['keypoints_2d'] is not None:
            return result
         if 'keypoints_3d_local' in result and 'camera_matrix' in result:
-            # DEBUG
             result['keypoints_2d'] = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
-                                                                         result['camera_matrix']) / 2
-            # DEBUG
+                                                                         result['camera_matrix'])
         if 'heatmaps' in result:
-            # DEBUG
-            result['keypoints_2d'] = conversion_utils.get_keypoints_from_heatmaps(result['heatmaps']) / 2
-            # DEBUG
+            result['keypoints_2d'] = conversion_utils.get_keypoints_from_heatmaps(result['heatmaps'])
         else:
             raise ValueError('Could not find necessary data to calculate 2D keypoints!')
         return result
