@@ -1,0 +1,5 @@
+_target_: models.StackedHourglass
+out_features: 21
+in_channels: 3
+hourglass_features: 256
+num_layers: 1

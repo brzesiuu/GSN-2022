@@ -18,7 +18,7 @@ class FreiPoseDataset(Dataset):
     """
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), scale=[1, 1]) -> None:
+                 transform=transforms.Compose([transforms.ToTensor()]), scale=1) -> None:
         """
         Class constructor
         """
@@ -49,5 +49,6 @@ class FreiPoseDataset(Dataset):
         return {
             'image': self._transform(image),
             'keypoints_3d_local': coords,
-            'camera_matrix': camera_matrix
+            'camera_matrix': camera_matrix,
+            'scale': self._scale
         }

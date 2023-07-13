@@ -63,10 +63,10 @@ class HourglassModule(nn.Module):
         conv_2 = self._conv_2_down(self._max_pool(conv_1))
         conv_3 = self._conv_3_down(self._max_pool(conv_2))
         conv_4 = self._conv_4_down(self._max_pool(conv_3))
-        conv_5 = self._conv_5_3(self._conv_5_2(self._conv_5_1(conv_4)))
+        conv_5 = self._conv_5_3(self._conv_5_2(self._conv_5_1(self._max_pool(conv_4))))
 
         x = self._upsample(conv_5)
         x = self._upsample(self._conv_4_up(self._conv_4_middle(conv_4) + x))
         x = self._upsample(self._conv_3_up(self._conv_3_middle(conv_3) + x))
         x = self._upsample(self._conv_2_up(self._conv_2_middle(conv_2) + x))
-        return self._upsample(self._conv_1_up(self._conv_1_middle(conv_1) + x))
+        return self._conv_1_up(self._conv_1_middle(conv_1) + x)
