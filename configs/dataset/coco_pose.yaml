@@ -1,0 +1,8 @@
+_target_: datasets.CocoPoseDataset
+json_path: 'C:\\datasets\\coco\\2017_converted\\annotations'
+image_path: 'C:\\datasets\\coco\\2017_converted\\images'
+set_type: 'training'
+image_extension: '.jpg'
+transform:
+  _target_: transforms.DatasetTransform
+  value: IMAGE_NET

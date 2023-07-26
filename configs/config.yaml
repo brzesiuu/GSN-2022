@@ -1,6 +1,6 @@
 defaults:
   - model: unet
-  - dataset: frei_pose
+  - dataset: coco_pose
   - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
