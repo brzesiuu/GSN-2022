@@ -6,8 +6,8 @@ import torch
 
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
+from torchvision.transforms import transforms as standard_transforms
 
-from decorators.debug_decorators import time_measure
 from utils import PosePath, file_utils
 from decorators.conversion_decorators import heatmaps, keypoints_2d
 
@@ -18,13 +18,14 @@ class FreiPoseDataset(Dataset):
     """
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), scale=1) -> None:
+                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224) -> None:
         """
         Class constructor
         """
         self._path = folder_path
         self._set_type = set_type
-        self._scale = scale
+        self._scale = resize / original_size
+        self._resize = resize
 
         self._image_paths = PosePath(self._path).joinpath('training', 'rgb').pose_glob('*' + image_extension,
                                                                                        natsort=True, to_list=True)
@@ -46,6 +47,8 @@ class FreiPoseDataset(Dataset):
         camera_matrix = np.array(file_utils.load_config(self._camera_matrix_paths[idx]), dtype=np.float32)
 
         image = cv.imread(str(self._image_paths[idx]))
+        image = standard_transforms.Compose(
+            [standard_transforms.ToTensor(), standard_transforms.Resize((self._resize, self._resize))])(image)
         return {
             'image': self._transform(image),
             'keypoints_3d_local': coords,
