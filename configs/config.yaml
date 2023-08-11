@@ -1,6 +1,6 @@
 defaults:
-  - model: unet
-  - dataset: coco_pose
+  - model: stacked_hourglass
+  - dataset: frei_pose
   - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
@@ -14,7 +14,7 @@ input_key: 'image'
 output_key: 'heatmaps'
 
 # Dataset params
-batch_size: 48
+batch_size: 15
 train_ratio: 0.9
 
 # Checkpoint callback
