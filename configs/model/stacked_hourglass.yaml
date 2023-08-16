@@ -1,5 +1,5 @@
-_target_: models.StackedHourglass
-out_features: 21
-in_channels: 3
-hourglass_features: 256
-num_layers: 1
+_target_: models.PoseNet
+nstack: 1
+inp_dim: 64
+oup_dim: 21
+bn: true

@@ -1,0 +1,2 @@
+_target_: models.PoseEstimationModel
+num_keypoints: 21

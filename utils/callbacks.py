@@ -11,13 +11,14 @@ from utils.visualization import visualize_keypoints
 
 
 class ImagePredictionLogger(Callback):
-    def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map=KeypointsMap.CocoPose,
-                 denorm=DatasetTransform.IMAGE_NET_INVERSE):
+    def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map=KeypointsMap.FreiPose,
+                 denorm=DatasetTransform.FREI_POSE_INVERSE):
         super().__init__()
         self.num_samples = num_samples
 
         self.val_imgs = val_samples['image']
         self.val_predictions = val_samples['keypoints_2d']
+        self.val_heatmaps = val_samples['heatmaps']
 
         self.train_imgs = train_samples['image']
         self.train_predictions = train_samples['keypoints_2d']
@@ -70,26 +71,37 @@ class ImagePredictionLogger(Callback):
             heatmap = preds_train['heatmaps'][0, idx].detach().cpu().numpy()
             heatmap = (255 * heatmap).astype(np.uint8)
             heatmaps.append(wandb.Image(heatmap))
+
+        heatmaps_gt = []
+        for idx in range(len(self.val_heatmaps[0])):
+            heatmap = self.val_heatmaps[0, idx].detach().cpu().numpy()
+            heatmap = (255 * heatmap).astype(np.uint8)
+            heatmaps_gt.append(wandb.Image(heatmap))
+
         trainer.logger.experiment.log({
             "train_predictions": images_train,
             "val_predictions": images_val,
             "heatmaps": heatmaps,
+            "heatmaps_gt": heatmaps_gt,
             "train_gt": images_train_preds,
             "val_gt": images_val_preds
         })
 
 
 class PCKCallback(Callback):
-    def __init__(self, val_samples, distance_threshold=15):
+    def __init__(self, val_dataset, distance_threshold=15):
         super().__init__()
-        self.val_imgs = val_samples['image']
-        self.val_predictions = val_samples['keypoints_2d']
+        self.val_dataset = val_dataset
         self.loss = functools.partial(PCKLoss, distance_threshold=distance_threshold)
 
     def on_validation_epoch_end(self, trainer, pl_module):
         # Bring the tensors to CPU
-        val_imgs = self.val_imgs.to(device=pl_module.device)
-        preds = pl_module(val_imgs)
-        pck_loss = self.loss(preds['keypoints_2d'], self.val_predictions)
-
-        pl_module.log('PCK', pck_loss, prog_bar=True)
+        pck = []
+        for batch in self.val_dataset:
+            imgs = batch['image']
+            gt = batch['keypoints_2d']
+            val_imgs = imgs.to(device=pl_module.device)
+            preds = pl_module(val_imgs)
+            pck_loss = self.loss(preds['keypoints_2d'], gt)
+            pck.append(pck_loss)
+        pl_module.log('PCK', np.mean(pck), prog_bar=True)

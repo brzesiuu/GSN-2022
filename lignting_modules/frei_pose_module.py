@@ -3,7 +3,7 @@ import torch
 
 
 class FreiPoseModule(pl.LightningModule):
-    def __init__(self, model, partial_optimizer, loss, input_key, output_key):
+    def __init__(self, model, partial_optimizer, loss, input_key, output_key, lr=None):
         super().__init__()
 
         self.save_hyperparameters()
@@ -12,6 +12,7 @@ class FreiPoseModule(pl.LightningModule):
         self.loss = loss
         self.input_key = input_key
         self.output_key = output_key
+        self.lr = 1e-1 if lr is None else lr
 
     def forward(self, x):
         return self.model(x)
@@ -46,9 +47,9 @@ class FreiPoseModule(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = self.partial_optimizer(self.model.parameters())
+        optimizer = self.partial_optimizer(params=self.model.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer=optimizer, factor=0.5, patience=20, verbose=True, threshold=0.00001
+            optimizer=optimizer, factor=0.5, patience=1, verbose=True
         )
         return {
             'optimizer': optimizer,

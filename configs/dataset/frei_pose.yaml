@@ -2,7 +2,7 @@ _target_: datasets.FreiPoseDataset
 folder_path: 'C:\\datasets\\FreiPose'
 set_type: 'training'
 image_extension: '.jpg'
-resize: 192
+resize: 128
 original_size: 224
 transform:
   _target_: transforms.DatasetTransform

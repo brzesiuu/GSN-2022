@@ -1,5 +1,5 @@
 defaults:
-  - model: stacked_hourglass
+  - model: unet
   - dataset: frei_pose
   - optimizer: adam_pose
   - trainer: frei_trainer
@@ -12,10 +12,11 @@ loss:
   _target_: losses.iou_loss.IoULoss
 input_key: 'image'
 output_key: 'heatmaps'
+lr: 0.05
 
 # Dataset params
-batch_size: 15
-train_ratio: 0.9
+batch_size: 48
+train_ratio: 0.95
 
 # Checkpoint callback
 checkpoint_callback:
@@ -29,5 +30,6 @@ checkpoint_callback:
 # W&B logger
 logger:
   _target_: pytorch_lightning.loggers.WandbLogger
-  project: 'pose-estimation'
+  project: 'frei-pose-estimation'
+  name: '20230812_unet_2k'
   job_type: 'train'
