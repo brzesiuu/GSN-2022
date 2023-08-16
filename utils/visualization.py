@@ -15,6 +15,8 @@ def visualize_keypoints(image, keypoints, keypoints_map, thickness=2):
             bgr = (int(blue * 255), int(green * 255), int(red * 255))
             x1, y1 = keypoints[joint_group[idx]]
             x2, y2 = keypoints[joint_group[idx + 1]]
+            if any(np.isnan([x1, x2, y1, y2])):
+                continue
             image_copy = cv.line(image_copy, (int(x1), int(y1)), (int(x2), int(y2)), bgr, thickness=thickness)
             hue_idx += 1
     return image_copy
