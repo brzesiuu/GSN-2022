@@ -2,8 +2,9 @@ _target_: datasets.FreiPoseDataset
 folder_path: 'C:\\datasets\\FreiPose'
 set_type: 'training'
 image_extension: '.jpg'
-resize: 256
+resize: 224
 original_size: 224
+heatmaps_scale: 0.25
 transform:
   _target_: transforms.DatasetTransform
   value: IMAGE_NET

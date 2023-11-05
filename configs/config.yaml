@@ -1,6 +1,6 @@
 defaults:
-  - model: unet
-  - dataset: rendered_pose
+  - model: baseline_mmpose
+  - dataset: frei_pose
   - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
@@ -31,6 +31,6 @@ checkpoint_callback:
 # W&B logger
 logger:
   _target_: pytorch_lightning.loggers.WandbLogger
-  project: 'rendered-pose-estimation'
-  name: '20231101_unet_2k'
+  project: 'frei-pose-estimation-mmpose-testing'
+  name: '20231105_baseline_mmpose'
   job_type: 'train'

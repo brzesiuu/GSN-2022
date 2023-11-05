@@ -20,7 +20,7 @@ class FreiPoseDataset(Dataset):
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
                  transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224,
-                 denorm=None) -> None:
+                 denorm=None, heatmaps_scale=None) -> None:
         """
         Class constructor
         """
@@ -28,6 +28,7 @@ class FreiPoseDataset(Dataset):
         self._set_type = set_type
         self._scale = resize / original_size
         self._resize = resize
+        self._heatmaps_scale = heatmaps_scale
 
         self._image_paths = PosePath(self._path).joinpath('training', 'rgb').pose_glob('*' + image_extension,
                                                                                        natsort=True, to_list=True)
@@ -58,5 +59,6 @@ class FreiPoseDataset(Dataset):
             'image': self._transform(image),
             'keypoints_3d_local': coords,
             'camera_matrix': camera_matrix,
-            'scale': self._scale
+            'scale': self._scale,
+            'heatmaps_scale': self._heatmaps_scale
         }
