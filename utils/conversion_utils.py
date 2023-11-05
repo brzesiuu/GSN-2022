@@ -37,7 +37,11 @@ def get_heatmaps(points_2d: np.ndarray, image_size: tuple, gaussian_kernel: int 
     heatmaps = []
     for point_2d in points_2d:
         img = np.zeros(image_size[:2], dtype=np.float32)
-        img[round(point_2d[1]), round(point_2d[0])] = 1
+        if point_2d[0] > image_size[1] - 1:
+            point_2d[0] = image_size[1] - 1
+        if point_2d[1] > image_size[0] - 1:
+            point_2d[1] = image_size[0] - 1
+        img[round(point_2d[0]), round(point_2d[1])] = 1
         img = cv.GaussianBlur(img, (gaussian_kernel, gaussian_kernel), 0)
         img /= img.max()
         heatmaps.append(img)
@@ -62,8 +66,9 @@ def get_keypoints_from_heatmaps(heatmaps):
 def _get_keypoints_from_heatmaps_single_batch(heatmaps):
     indices = []
     for heatmap in heatmaps:
-        index = np.unravel_index(np.argmax(heatmap, axis=None), heatmap.shape)
-        index = [index[1], index[0]]
+        heatmap_norm = heatmap / heatmap.sum()
+        y = np.dot(heatmap_norm.sum(axis=0), np.linspace(0, heatmap.shape[0], heatmap.shape[0]))
+        x = np.dot(heatmap_norm.sum(axis=1), np.linspace(0, heatmap.shape[1], heatmap.shape[1]))
+        index = [x, y]
         indices.append(index)
     return np.array(indices)
-

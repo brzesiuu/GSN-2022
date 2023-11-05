@@ -1,1 +1,2 @@
 from .frei_pose_dataset import FreiPoseDataset
+from .rendered_pose_dataset import RenderedPoseDataset

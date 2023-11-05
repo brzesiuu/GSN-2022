@@ -1,7 +1,7 @@
 defaults:
   - model: unet
-  - dataset: frei_pose
-  - optimizer: sgd_pose
+  - dataset: rendered_pose
+  - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
 
@@ -9,13 +9,15 @@ debug: true
 
 # Loss calculation params
 loss:
-  _target_: torch.nn.MSELoss
+  _target_: losses.iou_loss.IoULoss
 input_key: 'image'
 output_key: 'heatmaps'
+lr: 0.0069
+pck_ratio: 0.05
 
 # Dataset params
-batch_size: 5
-train_ratio: 0.9
+batch_size: 48
+train_ratio: 0.95
 
 # Checkpoint callback
 checkpoint_callback:
@@ -28,6 +30,7 @@ checkpoint_callback:
 
 # W&B logger
 logger:
-  _target_: pytorch_lightning.loggers/WandbLogger
-  project: 'pose-estimation'
+  _target_: pytorch_lightning.loggers.WandbLogger
+  project: 'rendered-pose-estimation'
+  name: '20231101_unet_2k'
   job_type: 'train'

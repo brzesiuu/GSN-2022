@@ -10,10 +10,13 @@ def keypoints_2d(function):
     def wrapper(*args, **kwargs):
         result = function(*args, **kwargs)
         if 'keypoints_2d' in result and result['keypoints_2d'] is not None:
-           return result
+            return result
         if 'keypoints_3d_local' in result and 'camera_matrix' in result:
-           result['keypoints_2d'] = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
-                                                                         result['camera_matrix'])
+            keypoints_2d = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
+                                                                result['camera_matrix'])
+            if "scale" in result:
+                keypoints_2d *= result['scale']
+            result["keypoints_2d"] = keypoints_2d
         if 'heatmaps' in result:
             result['keypoints_2d'] = conversion_utils.get_keypoints_from_heatmaps(result['heatmaps'])
         else:
@@ -38,6 +41,8 @@ def heatmaps(func=None, *, gaussian_kernel=None):
         elif 'keypoints_3d_local' in result and 'camera_matrix' in result:
             uv = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
                                                       result['camera_matrix'])
+            if "scale" in result:
+                uv *= result['scale']
         else:
             raise ValueError('Could not find necessary data to calculate 2D keypoints!')
         result['heatmaps'] = conversion_utils.get_heatmaps(uv, result['image'].shape, gaussian_kernel)

@@ -38,8 +38,13 @@ class UNet(nn.Module):
         self._conv_up_2 = ConvBlock(out_channels * 6, out_channels * 2)
         self._conv_up_3 = ConvBlock(out_channels * 3, out_channels)
 
-        self._conv_heatmap = nn.Sequential(nn.Conv2d(out_channels, num_features, 3, padding='same'),
+        self._conv_heatmap = nn.Sequential(nn.Conv2d(out_channels, num_features, 3, padding=1, bias=False),
                                            nn.Sigmoid())
+
+        self.conv_out = nn.Sequential(
+            nn.Conv2d(out_channels, num_features, kernel_size=3, padding=1, bias=False),
+            nn.Sigmoid(),
+        )
 
         self._max_pool = nn.MaxPool2d(2)
         self._up_sample = nn.Upsample(scale_factor=2)
