@@ -10,6 +10,7 @@ from torchvision.transforms import transforms as standard_transforms
 
 from utils import PosePath, file_utils
 from decorators.conversion_decorators import heatmaps, keypoints_2d
+from utils.enums import KeypointsMap
 
 
 class FreiPoseDataset(Dataset):
@@ -18,7 +19,8 @@ class FreiPoseDataset(Dataset):
     """
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224) -> None:
+                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224,
+                 denorm=None) -> None:
         """
         Class constructor
         """
@@ -36,6 +38,9 @@ class FreiPoseDataset(Dataset):
                                                                                       natsort=True, to_list=True)
 
         self._transform = transform if not isinstance(transform, Enum) else transform.value
+
+        self.denorm = denorm
+        self.keypoints_map = KeypointsMap.FreiPose
 
     def __len__(self):
         return len(self._image_paths)

@@ -29,7 +29,8 @@ def main(cfg: DictConfig) -> None:
                                    early_stop_threshold=4.0, update_attr=True)
     pck_thresh = train_samples["image"].shape[2] * config.pck_ratio
     config.trainer.callbacks.extend(
-        [lr_finder, ImagePredictionLogger(val_samples, train_samples), config.checkpoint_callback,
+        [lr_finder, ImagePredictionLogger(val_samples, train_samples, keypoints_map=config.dataset.keypoints_map,
+                                          denorm=config.dataset.denorm), config.checkpoint_callback,
          PCKCallback(data_module.val_dataloader(), pck_thresh), LearningRateMonitor()])
     config.trainer.logger = config.logger
 

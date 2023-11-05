@@ -10,6 +10,7 @@ from torchvision.transforms import transforms as standard_transforms
 
 from utils import PosePath, file_utils
 from decorators.conversion_decorators import heatmaps, keypoints_2d
+from utils.enums import KeypointsMap
 
 
 class RenderedPoseDataset(Dataset):
@@ -18,7 +19,8 @@ class RenderedPoseDataset(Dataset):
     """
 
     def __init__(self, folder_path, image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=320) -> None:
+                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=320,
+                 denorm=None) -> None:
         """
         Class constructor
         """
@@ -33,6 +35,8 @@ class RenderedPoseDataset(Dataset):
                                                                                         natsort=True, to_list=True)
 
         self._transform = transform if not isinstance(transform, Enum) else transform.value
+        self.denorm = denorm
+        self.keypoints_map = KeypointsMap.RenderedPose
 
     def __len__(self):
         return 5000

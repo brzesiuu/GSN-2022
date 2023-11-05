@@ -7,3 +7,6 @@ original_size: 224
 transform:
   _target_: transforms.DatasetTransform
   value: IMAGE_NET
+denorm:
+  _target_: transforms.DatasetTransform
+  value: IMAGE_NET_INVERSE
