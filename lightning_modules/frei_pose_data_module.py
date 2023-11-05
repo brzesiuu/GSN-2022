@@ -1,6 +1,5 @@
 import pytorch_lightning as pl
 from torch.utils.data import random_split, DataLoader
-import multiprocessing
 
 
 class FreiPoseDataModule(pl.LightningDataModule):

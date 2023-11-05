@@ -7,8 +7,8 @@ from omegaconf import DictConfig
 import torch
 from pytorch_lightning.callbacks import LearningRateFinder, LearningRateMonitor
 
-from lignting_modules.frei_pose_data_module import FreiPoseDataModule
-from lignting_modules.frei_pose_module import FreiPoseModule
+from lightning_modules.frei_pose_data_module import FreiPoseDataModule
+from lightning_modules.frei_pose_module import FreiPoseModule
 from utils.callbacks import ImagePredictionLogger, PCKCallback
 
 
