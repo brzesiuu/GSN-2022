@@ -49,10 +49,10 @@ class FreiPoseModule(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = self.partial_optimizer(params=self.model.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer=optimizer, factor=0.5, patience=1, verbose=True
+            optimizer=optimizer, factor=0.5, patience=3, verbose=True, cooldown=2
         )
         return {
             'optimizer': optimizer,
-            'scheduler': scheduler,
+            'lr_scheduler': scheduler,
             'monitor': 'val_loss'
         }

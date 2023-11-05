@@ -11,8 +11,8 @@ from utils.visualization import visualize_keypoints
 
 
 class ImagePredictionLogger(Callback):
-    def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map=KeypointsMap.FreiPose,
-                 denorm=DatasetTransform.FREI_POSE_INVERSE):
+    def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map=KeypointsMap.RenderedPose,
+                 denorm=DatasetTransform.IMAGE_NET_INVERSE):
         super().__init__()
         self.num_samples = num_samples
 
@@ -22,6 +22,7 @@ class ImagePredictionLogger(Callback):
 
         self.train_imgs = train_samples['image']
         self.train_predictions = train_samples['keypoints_2d']
+        self.train_heatmaps = train_samples['heatmaps']
 
         self.keypoints_map = keypoints_map
         self.denorm = denorm
@@ -73,8 +74,8 @@ class ImagePredictionLogger(Callback):
             heatmaps.append(wandb.Image(heatmap))
 
         heatmaps_gt = []
-        for idx in range(len(self.val_heatmaps[0])):
-            heatmap = self.val_heatmaps[0, idx].detach().cpu().numpy()
+        for idx in range(len(self.train_heatmaps[0])):
+            heatmap = self.train_heatmaps[0, idx].detach().cpu().numpy()
             heatmap = (255 * heatmap).astype(np.uint8)
             heatmaps_gt.append(wandb.Image(heatmap))
 

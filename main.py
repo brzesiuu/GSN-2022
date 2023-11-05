@@ -27,9 +27,10 @@ def main(cfg: DictConfig) -> None:
     train_samples = next(iter(data_module.train_dataloader()))
     lr_finder = LearningRateFinder(min_lr=1e-08, max_lr=1, num_training_steps=100, mode='exponential',
                                    early_stop_threshold=4.0, update_attr=True)
+    pck_thresh = train_samples["image"].shape[2] * config.pck_ratio
     config.trainer.callbacks.extend(
         [lr_finder, ImagePredictionLogger(val_samples, train_samples), config.checkpoint_callback,
-         PCKCallback(data_module.val_dataloader(), 6.4), LearningRateMonitor()])
+         PCKCallback(data_module.val_dataloader(), pck_thresh), LearningRateMonitor()])
     config.trainer.logger = config.logger
 
     config.trainer.fit(train_module, data_module)
