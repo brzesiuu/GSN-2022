@@ -5,9 +5,9 @@ from decorators.conversion_decorators import keypoints_2d
 
 
 class MMPoseModel(nn.Module):
-    def __init__(self):
+    def __init__(self, config_path):
         super(MMPoseModel, self).__init__()
-        tmp = init_model('C:\\models\\pose_resnet.py')
+        tmp = init_model(config_path)
         self._backbone = tmp.backbone
         self._head = tmp.head
         self._heatmaps_scale = 0.25

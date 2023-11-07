@@ -1,0 +1,2 @@
+_target_: models.MMPoseModel
+config_path: 'C:\\models\\pose_mobilenet_onehand.py'

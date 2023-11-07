@@ -2,6 +2,7 @@ import random
 
 import hydra
 import numpy as np
+import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 import torch
@@ -18,7 +19,20 @@ def main(cfg: DictConfig) -> None:
     np.random.seed(0)
     random.seed(0)
 
+    model = hydra.core.hydra_config.HydraConfig.get().runtime.choices.model
+    dataset = hydra.core.hydra_config.HydraConfig.get().runtime.choices.dataset
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+
+    cfg["checkpoint_callback"][
+        "dirpath"] = f"model/{dataset}_{model}"
+    cfg["logger"]["name"] = "${now:%Y_%m_%d}_" + model
+
     config = instantiate(cfg)
+
+    artifact = wandb.Artifact("hydra-configs", type="configs")
+    artifact.add_dir(output_dir)
+    wandb.log_artifact(artifact)
+
     train_module = FreiPoseModule(config.model, config.optimizer, config.loss, config.input_key, config.output_key,
                                   lr=config.lr)
     data_module = FreiPoseDataModule(config.batch_size, config.dataset, config.train_ratio)
@@ -35,6 +49,7 @@ def main(cfg: DictConfig) -> None:
     config.trainer.logger = config.logger
 
     config.trainer.fit(train_module, data_module)
+
 
 if __name__ == '__main__':
     main()

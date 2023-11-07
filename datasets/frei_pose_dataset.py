@@ -44,7 +44,7 @@ class FreiPoseDataset(Dataset):
         self.keypoints_map = KeypointsMap.FreiPose
 
     def __len__(self):
-        return len(self._image_paths)
+        return 5000
 
     @keypoints_2d
     @heatmaps(gaussian_kernel=7)
