@@ -2,6 +2,8 @@ import random
 
 import hydra
 import numpy as np
+import omegaconf
+
 import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
@@ -11,6 +13,7 @@ from pytorch_lightning.callbacks import LearningRateFinder, LearningRateMonitor
 from lightning_modules.frei_pose_data_module import FreiPoseDataModule
 from lightning_modules.frei_pose_module import FreiPoseModule
 from utils.callbacks import ImagePredictionLogger, PCKCallback
+from utils.file_utils import load_config
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -25,7 +28,7 @@ def main(cfg: DictConfig) -> None:
 
     cfg["checkpoint_callback"][
         "dirpath"] = f"model/{dataset}_{model}"
-    cfg["logger"]["name"] = "${now:%Y_%m_%d}_" + model
+    cfg["logger"]["name"] = "${now:%Y_%m_%d}_" + f"{model}_{len(dataset)}"
 
     config = instantiate(cfg)
 

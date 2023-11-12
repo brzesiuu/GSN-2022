@@ -34,9 +34,3 @@ logger:
   project: 'Frei Pose Estimation'
   name: ''
   job_type: 'train'
-
-
-hydra:
-  sweeper:
-    params:
-      +model: pose_hrnet_onehand_baseline,posemobilenet_onehand_baseline
