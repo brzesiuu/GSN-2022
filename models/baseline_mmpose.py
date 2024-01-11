@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from mmpose.apis import init_model
 import torch.nn as nn
 
@@ -7,7 +10,11 @@ from decorators.conversion_decorators import keypoints_2d
 class MMPoseModel(nn.Module):
     def __init__(self, config_path):
         super(MMPoseModel, self).__init__()
-        tmp = init_model(config_path)
+        try:
+            tmp = init_model(config_path)
+        except FileNotFoundError:
+            path = str(Path(os.getcwd()).joinpath(config_path))
+            tmp = init_model(path)
         self._backbone = tmp.backbone
         self._head = tmp.head
         self._neck = tmp.neck if hasattr(tmp, 'neck') else None
