@@ -3,6 +3,7 @@ from enum import Enum
 import numpy as np
 import cv2 as cv
 import torch
+import albumentations as A
 
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
@@ -43,8 +44,16 @@ class FreiPoseDataset(Dataset):
         self.denorm = denorm
         self.keypoints_map = KeypointsMap.FreiPose
 
+    @property
+    def set_type(self):
+        return self._set_type
+
+    @set_type.setter
+    def set_type(self, value):
+        self._set_type = value
+
     def __len__(self):
-        return 20000
+        return 30000
 
     @keypoints_2d
     @heatmaps(gaussian_kernel=7)
@@ -53,8 +62,14 @@ class FreiPoseDataset(Dataset):
         camera_matrix = np.array(file_utils.load_config(self._camera_matrix_paths[idx]), dtype=np.float32)
 
         image = cv.imread(str(self._image_paths[idx]))
-        image = standard_transforms.Compose(
-            [standard_transforms.ToTensor(), standard_transforms.Resize((self._resize, self._resize))])(image)
+        if self.set_type == "training":
+            image = standard_transforms.ToTensor()(A.Compose([A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
+                               A.RandomBrightnessContrast(p=0.5),
+                               A.Resize(self._resize, self._resize)])(image=image)["image"])
+        else:
+            image = standard_transforms.Compose(
+                [standard_transforms.ToTensor(), standard_transforms.Resize((self._resize, self._resize))])(image)
+
         return {
             'image': self._transform(image),
             'keypoints_3d_local': coords,
