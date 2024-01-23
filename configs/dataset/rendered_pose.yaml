@@ -1,8 +1,10 @@
 _target_: datasets.RenderedPoseDataset
 folder_path: 'C:\\datasets\\RHD_v1-1\\RHD_published_v2\\training_converted'
+set_type: 'training'
 image_extension: '.png'
 resize: 256
 original_size: 320
+heatmaps_scale: 0.25
 transform:
   _target_: transforms.DatasetTransform
   value: IMAGE_NET

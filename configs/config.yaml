@@ -1,6 +1,6 @@
 defaults:
-  - model: pose_resnet_frei_baseline
-  - dataset: frei_pose
+  - model: pose_mobilenet_onehand_baseline
+  - dataset: rendered_pose
   - optimizer: adam_pose
   - trainer: frei_trainer
   - _self_
@@ -13,7 +13,7 @@ loss:
 input_key: 'image'
 output_key: 'heatmaps'
 lr: 0.001
-pck_ratio: 0.05
+pck_ratio: 0.2
 
 # Dataset params
 batch_size: 12
@@ -31,6 +31,6 @@ checkpoint_callback:
 # W&B logger
 logger:
   _target_: pytorch_lightning.loggers.WandbLogger
-  project: 'Frei Pose Estimation'
+  project: 'Rendered Pose Estimation'
   name: ''
   job_type: 'train'

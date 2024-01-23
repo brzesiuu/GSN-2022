@@ -40,10 +40,10 @@ def heatmaps(func=None, *, gaussian_kernel=None):
         if 'heatmaps' in result and result['heatmaps'] is not None:
             return result
         if 'keypoints_2d' in result:
-            uv = result['keypoints_2d']
+            uv = result['keypoints_2d'].copy()
         elif 'keypoints_3d_local' in result and 'camera_matrix' in result:
             uv = conversion_utils.project_local_to_uv(result['keypoints_3d_local'],
-                                                      result['camera_matrix'])
+                                                      result['camera_matrix']).copy()
         else:
             raise ValueError('Could not find necessary data to calculate 2D keypoints!')
         if "scale" in result:
