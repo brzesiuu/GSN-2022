@@ -57,7 +57,7 @@ class FreiPoseDataset(Dataset):
 
     @keypoints_2d
     @heatmaps(gaussian_kernel=7)
-    def __getitem__(self, idx: int) -> (torch.Tensor, torch.Tensor):
+    def __getitem__(self, idx: int) -> dict:
         coords = np.array(file_utils.load_config(self._xyz_paths[idx]), dtype=np.float32)
         camera_matrix = np.array(file_utils.load_config(self._camera_matrix_paths[idx]), dtype=np.float32)
 
