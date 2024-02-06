@@ -106,3 +106,22 @@ class PCKCallback(Callback):
             pck_loss = self.loss(preds['keypoints_2d'], gt)
             pck.append(pck_loss)
         pl_module.log('PCK', np.mean(pck), prog_bar=True)
+
+
+class PCKCallbackDA(Callback):
+    def __init__(self, val_dataset, distance_threshold=15):
+        super().__init__()
+        self.val_dataset = val_dataset
+        self.loss = functools.partial(PCKLoss, distance_threshold=distance_threshold)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        # Bring the tensors to CPU
+        pck = []
+        for batch in self.val_dataset:
+            imgs = batch['train_batch']['image']
+            gt = batch['train_batch']['keypoints_2d']
+            val_imgs = imgs.to(device=pl_module.device)
+            preds = pl_module(val_imgs)
+            pck_loss = self.loss(preds['keypoints_2d'], gt)
+            pck.append(pck_loss)
+        pl_module.log('PCK', np.mean(pck), prog_bar=True)

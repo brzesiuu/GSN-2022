@@ -3,21 +3,26 @@ import torch
 
 
 class DomainAdaptationModule(pl.LightningModule):
-    def __init__(self, model, partial_optimizer, heatmap_loss, discriminator_loss, input_key, heatmaps_key,
-                 lr=None):
+    def __init__(self, teacher_model, student_model, partial_optimizer, heatmap_loss, input_key, heatmaps_key,
+                 lr=None, style_net=None):
         super().__init__()
 
         self.save_hyperparameters()
-        self.model = model
+        self.teacher_model = teacher_model
+        self.student_model = student_model
+        self.style_net = style_net
+
         self.partial_optimizer = partial_optimizer
         self.heatmap_loss = heatmap_loss
-        self.discriminator_loss = discriminator_loss
+
         self.input_key = input_key
         self.heatmaps_key = heatmaps_key
         self.lr = 1e-1 if lr is None else lr
 
+        self._alpha = 0.5
+
     def forward(self, x):
-        return self.model(x)
+        return self.student_model(x)
 
     def compute_discriminator_loss(self, x, y):
         return self.compute_discriminator_loss(x, y)
@@ -26,49 +31,55 @@ class DomainAdaptationModule(pl.LightningModule):
         return self.heatmap_loss(x, y)
 
     def compute_loss(self, heatmap_loss, discriminator_loss):
-        return heatmap_loss - discriminator_loss
+        return self._alpha * heatmap_loss + (1-self._alpha) * discriminator_loss
 
     def common_step(self, batch, batch_idx):
-        x, heatmaps_target, labels_target = batch[self.input_key], batch[self.heatmaps_key], batch[self.labels_key]
-        outputs = self(x)
+        train_batch = batch["train_batch"]
+        target_batch = batch["target_batch"]
+        x_source, heatmaps_source = train_batch[self.input_key], train_batch[self.heatmaps_key]
+        x_target = target_batch[self.input_key]
+        x_target_teacher = x_target.clone()
+        if self.style_net is not None:
+            x_source = self.style_net(x_source)
+            x_target_teacher = self.style_net(x_target_teacher)
+        outputs_source = self.student_model(x_source)
+        outputs_target_student = self.student_model(x_target)
+        outputs_target_teacher = self.teacher_model(x_target_teacher)
 
-        heatmaps = outputs[self.heatmaps_key]
-        heatmap_loss = self.compute_heatmap_loss(heatmaps, heatmaps_target)
-
-        labels = self.forward_discriminator(x)
-        discriminator_loss = self.compute_discriminator_loss(labels, labels_target)
-        return heatmap_loss, discriminator_loss, outputs
+        heatmap_loss_source = self.compute_heatmap_loss(outputs_source[self.heatmaps_key], heatmaps_source)
+        heatmap_loss_target = self.compute_heatmap_loss(outputs_target_student[self.heatmaps_key], outputs_target_teacher[self.heatmaps_key])
+        return heatmap_loss_source, heatmap_loss_target, outputs_source, outputs_target_student
 
     def common_test_valid_step(self, batch, batch_idx):
-        heatmap_loss, discriminator_loss, outputs = self.common_step(batch, batch_idx)
-        return heatmap_loss, discriminator_loss
+        heatmap_loss_source, heatmap_loss_target, _, _ = self.common_step(batch, batch_idx)
+        return heatmap_loss_source, heatmap_loss_target
 
     def training_step(self, batch, batch_idx):
-        heatmap_loss, discriminator_loss = self.common_test_valid_step(batch, batch_idx)
-        total_loss = self.compute_loss(heatmap_loss, discriminator_loss)
-        self.log('train_heatmap_loss', heatmap_loss, on_step=True, on_epoch=True, logger=True)
-        self.log('train_discriminator_loss', discriminator_loss, on_step=True, on_epoch=True, logger=True)
+        heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
+        total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
+        self.log('train_heatmap_loss', heatmap_loss_source, on_step=True, on_epoch=True, logger=True)
+        self.log('train_teacher_loss', heatmap_loss_target, on_step=True, on_epoch=True, logger=True)
         self.log('train_total_loss', total_loss, on_step=True, on_epoch=True, logger=True)
         return total_loss
 
     def validation_step(self, batch, batch_idx):
-        heatmap_loss, discriminator_loss = self.common_test_valid_step(batch, batch_idx)
-        total_loss = self.compute_loss(heatmap_loss, discriminator_loss)
-        self.log('val_heatmap_loss', heatmap_loss, prog_bar=True)
-        self.log('val_discriminator_loss', discriminator_loss, prog_bar=True)
+        heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
+        total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
+        self.log('val_heatmap_loss', heatmap_loss_source, prog_bar=True)
+        self.log('val_teacher_loss', heatmap_loss_target, prog_bar=True)
         self.log('val_total_loss', total_loss, prog_bar=True)
         return total_loss
 
     def test_step(self, batch, batch_idx):
-        heatmap_loss, discriminator_loss = self.common_test_valid_step(batch, batch_idx)
-        total_loss = self.compute_loss(heatmap_loss, discriminator_loss)
-        self.log('test_heatmap_loss', heatmap_loss, prog_bar=True)
-        self.log('test_discriminator_loss', discriminator_loss, prog_bar=True)
+        heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
+        total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
+        self.log('test_heatmap_loss', heatmap_loss_source, prog_bar=True)
+        self.log('test_teacher_loss', heatmap_loss_target, prog_bar=True)
         self.log('test_total_loss', total_loss, prog_bar=True)
         return total_loss
 
     def configure_optimizers(self):
-        optimizer = self.partial_optimizer(params=self.model.parameters(), lr=self.lr)
+        optimizer = self.partial_optimizer(params=self.student_model.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer, factor=0.5, patience=3, verbose=True, cooldown=2
         )

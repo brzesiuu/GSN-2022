@@ -1,5 +1,6 @@
 defaults:
-  - model: pose_mobilenet_onehand_baseline
+  - model@student_model: pose_mobilenet_onehand_baseline
+  - model@teacher_model: pose_mobilenet_onehand_baseline
   - dataset@train_dataset: rendered_pose
   - dataset@target_dataset: frei_pose
   - optimizer: adam_pose
@@ -11,8 +12,7 @@ debug: true
 # Loss calculation params
 heatmap_loss:
   _target_: losses.iou_loss.IoULoss
-discriminator_loss:
-  _target_: torch.nn.BCELoss
+
 input_key: 'image'
 output_key: 'heatmaps'
 lr: 0.001
