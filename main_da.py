@@ -12,8 +12,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from datasets.domain_adaptation_dataset import DomainAdaptationDataset
 from lightning_modules.domain_adaptation_module import DomainAdaptationModule
 from lightning_modules.frei_pose_data_module import FreiPoseDataModule
-from models.pose_da import MMPoseDAGAN
-from utils.callbacks import ImagePredictionLogger, PCKCallbackDA
+from utils.callbacks import PCKCallbackDA, ImagePredictionLoggerDA
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config_da")
@@ -47,15 +46,12 @@ def main(cfg: DictConfig) -> None:
 
     val_samples = next(iter(data_module.val_dataloader()))
     train_samples = next(iter(data_module.train_dataloader()))
-    val_samples = {key: torch.cat((val_samples["train_batch"][key], val_samples["target_batch"][key]), dim=0) for key in
-                   ['keypoints_2d', 'image', 'heatmaps']}
-    train_samples = {key: torch.cat((train_samples["train_batch"][key], train_samples["target_batch"][key]), dim=0) for
-                     key in ['keypoints_2d', 'image', 'heatmaps']}
 
-    pck_thresh = train_samples["image"].shape[2] * config.pck_ratio
+    pck_thresh = train_samples["train_batch"]["image"].shape[2] * config.pck_ratio
     config.trainer.callbacks.extend(
-        [ImagePredictionLogger(val_samples, train_samples, keypoints_map=config.train_dataset.keypoints_map,
-                               denorm=config.train_dataset.denorm), config.checkpoint_callback,
+        [ImagePredictionLoggerDA(val_samples, train_samples, keypoints_map_source=config.train_dataset.keypoints_map,
+                                 keypoints_map_target=config.target_dataset.keypoints_map,
+                                 denorm=config.train_dataset.denorm), config.checkpoint_callback,
          PCKCallbackDA(data_module.val_dataloader(), pck_thresh), LearningRateMonitor()])
     config.trainer.logger = config.logger
 

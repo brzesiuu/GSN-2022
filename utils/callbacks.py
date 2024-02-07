@@ -10,7 +10,27 @@ from utils.losses import PCKLoss
 from utils.visualization import visualize_keypoints
 
 
-class ImagePredictionLogger(Callback):
+class ImagePredictionLoggerBase(Callback):
+    def _get_prediction_visualizations(self, predictions, images, keypoints_map):
+        output_images = []
+        for pred, image in zip(predictions, images):
+            image_norm = self.denorm.value(image)
+            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
+            image_norm = (255 * image_norm).astype(np.uint8)[:, :, ::-1]
+            image_norm = visualize_keypoints(image_norm, pred, keypoints_map=keypoints_map.value)
+            output_images.append(wandb.Image(image_norm))
+        return output_images
+
+    def _get_heatmap_visualizations(self, heatmaps):
+        images = []
+        for idx in range(len(heatmaps[0])):
+            heatmap = heatmaps[0, idx].detach().cpu().numpy()
+            heatmap = (255 * heatmap).astype(np.uint8)
+            images.append(wandb.Image(heatmap))
+        return images
+
+
+class ImagePredictionLogger(ImagePredictionLoggerBase):
     def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map=KeypointsMap.RenderedPose,
                  denorm=DatasetTransform.IMAGE_NET_INVERSE):
         super().__init__()
@@ -35,49 +55,13 @@ class ImagePredictionLogger(Callback):
         preds_val = pl_module(val_imgs)
         preds_train = pl_module(train_imgs)
 
-        images_val = []
-        for pred, image in zip(preds_val['keypoints_2d'], val_imgs):
-            image_norm = self.denorm.value(image)
-            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
-            image_norm = (255 * image_norm).astype(np.uint8)
-            image_norm = visualize_keypoints(image_norm, pred, keypoints_map=self.keypoints_map.value)
-            images_val.append(wandb.Image(image_norm))
+        images_val = self._get_prediction_visualizations(preds_val['keypoints_2d'], val_imgs, self.keypoints_map)
+        images_train = self._get_prediction_visualizations(preds_train['keypoints_2d'], train_imgs, self.keypoints_map)
+        images_val_preds = self._get_prediction_visualizations(self.val_predictions, val_imgs, self.keypoints_map)
+        images_train_preds = self._get_prediction_visualizations(self.train_predictions, train_imgs, self.keypoints_map)
 
-        images_train = []
-        for pred, image in zip(preds_train['keypoints_2d'], train_imgs):
-            image_norm = self.denorm.value(image)
-            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
-            image_norm = (255 * image_norm).astype(np.uint8)
-            image_norm = visualize_keypoints(image_norm, pred, keypoints_map=self.keypoints_map.value)
-            images_train.append(wandb.Image(image_norm))
-
-        images_val_preds = []
-        for pred, image in zip(self.val_predictions, val_imgs):
-            image_norm = self.denorm.value(image)
-            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
-            image_norm = (255 * image_norm).astype(np.uint8)
-            image_norm = visualize_keypoints(image_norm, pred, keypoints_map=self.keypoints_map.value)
-            images_val_preds.append(wandb.Image(image_norm))
-
-        images_train_preds = []
-        for pred, image in zip(self.train_predictions, train_imgs):
-            image_norm = self.denorm.value(image)
-            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
-            image_norm = (255 * image_norm).astype(np.uint8)
-            image_norm = visualize_keypoints(image_norm, pred, keypoints_map=self.keypoints_map.value)
-            images_train_preds.append(wandb.Image(image_norm))
-
-        heatmaps = []
-        for idx in range(len(preds_train['heatmaps'][0])):
-            heatmap = preds_train['heatmaps'][0, idx].detach().cpu().numpy()
-            heatmap = (255 * heatmap).astype(np.uint8)
-            heatmaps.append(wandb.Image(heatmap))
-
-        heatmaps_gt = []
-        for idx in range(len(self.train_heatmaps[0])):
-            heatmap = self.train_heatmaps[0, idx].detach().cpu().numpy()
-            heatmap = (255 * heatmap).astype(np.uint8)
-            heatmaps_gt.append(wandb.Image(heatmap))
+        heatmaps = self._get_heatmap_visualizations(preds_train['heatmaps'])
+        heatmaps_gt = self._get_heatmap_visualizations(self.train_heatmaps)
 
         trainer.logger.experiment.log({
             "train_predictions": images_train,
@@ -86,6 +70,77 @@ class ImagePredictionLogger(Callback):
             "heatmaps_gt": heatmaps_gt,
             "train_gt": images_train_preds,
             "val_gt": images_val_preds
+        })
+
+
+class ImagePredictionLoggerDA(ImagePredictionLoggerBase):
+    def __init__(self, val_samples, train_samples, num_samples=32, keypoints_map_source=KeypointsMap.RenderedPose,
+                 keypoints_map_target=KeypointsMap.FreiPose, denorm=DatasetTransform.IMAGE_NET_INVERSE):
+        super().__init__()
+        self.num_samples = num_samples
+
+        self.val_imgs = {'source': val_samples['train_batch']['image'],
+                         'target': val_samples['target_batch']['image']}
+        self.val_predictions = {'source': val_samples['train_batch']['keypoints_2d'],
+                                'target': val_samples['target_batch']['keypoints_2d']}
+        self.val_heatmaps = {'source': val_samples['train_batch']['heatmaps'],
+                             'target': val_samples['target_batch']['heatmaps']}
+
+        self.train_imgs = {'source': train_samples['train_batch']['image'],
+                           'target': train_samples['target_batch']['image']}
+        self.train_predictions = {'source': train_samples['train_batch']['keypoints_2d'],
+                                  'target': train_samples['target_batch']['keypoints_2d']}
+        self.train_heatmaps = {'source': train_samples['train_batch']['heatmaps'],
+                               'target': train_samples['target_batch']['heatmaps']}
+
+        self.keypoints_map_source = keypoints_map_source
+        self.keypoints_map_target = keypoints_map_target
+        self.denorm = denorm
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        # Bring the tensors to CPU
+        val_imgs_source = self.val_imgs['source'].to(device=pl_module.device)
+        val_imgs_target = self.val_imgs['target'].to(device=pl_module.device)
+        train_imgs_source = self.train_imgs['source'].to(device=pl_module.device)
+        train_imgs_target = self.train_imgs['target'].to(device=pl_module.device)
+
+        preds_val_source = pl_module(val_imgs_source)
+        preds_val_target = pl_module(val_imgs_target)
+        preds_train_source = pl_module(train_imgs_source)
+        preds_train_target = pl_module(train_imgs_target)
+
+        images_val_source = self._get_prediction_visualizations(preds_val_source['keypoints_2d'], val_imgs_source,
+                                                                self.keypoints_map_source)
+        images_train_source = self._get_prediction_visualizations(preds_train_source['keypoints_2d'], train_imgs_source,
+                                                                  self.keypoints_map_source)
+        images_val_source_gt = self._get_prediction_visualizations(self.val_predictions["source"],
+                                                                   val_imgs_source, self.keypoints_map_source)
+        images_train_source_gt = self._get_prediction_visualizations(self.train_predictions["source"],
+                                                                     train_imgs_source, self.keypoints_map_source)
+
+        images_val_target = self._get_prediction_visualizations(preds_val_target['keypoints_2d'], val_imgs_target,
+                                                                self.keypoints_map_target)
+        images_train_target = self._get_prediction_visualizations(preds_train_target['keypoints_2d'], train_imgs_target,
+                                                                  self.keypoints_map_target)
+        images_val_target_gt = self._get_prediction_visualizations(self.val_predictions["target"],
+                                                                   val_imgs_target, self.keypoints_map_target)
+        images_train_target_gt = self._get_prediction_visualizations(self.train_predictions["target"],
+                                                                     train_imgs_target, self.keypoints_map_target)
+
+        heatmaps_source = self._get_heatmap_visualizations(preds_train_source['heatmaps'])
+        heatmaps_target = self._get_heatmap_visualizations(preds_train_target['heatmaps'])
+
+        trainer.logger.experiment.log({
+            "train_predictions_source": images_train_source,
+            "val_predictions_source": images_val_source,
+            "train_predictions_source_gt": images_train_source_gt,
+            "val_predictions_source_gt": images_val_source_gt,
+            "train_predictions_target": images_train_target,
+            "val_predictions_target": images_val_target,
+            "train_predictions_target_gt": images_train_target_gt,
+            "val_predictions_target_gt": images_val_target_gt,
+            "heatmaps_source": heatmaps_source,
+            "heatmaps_target": heatmaps_target,
         })
 
 
