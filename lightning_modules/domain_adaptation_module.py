@@ -1,6 +1,8 @@
 import pytorch_lightning as pl
 import torch
 
+from utils.optimizers import EMAOptimizer
+
 
 class DomainAdaptationModule(pl.LightningModule):
     def __init__(self, teacher_model, student_model, partial_optimizer, heatmap_loss, input_key, heatmaps_key,
@@ -22,6 +24,8 @@ class DomainAdaptationModule(pl.LightningModule):
         self._alpha = 0.5
         if pretrain:
             self._apply_pretrained_weights(pretrain)
+
+        self.automatic_optimization = False
 
     def _apply_pretrained_weights(self, pretrain):
         weights = torch.load(pretrain)['state_dict']
@@ -65,12 +69,30 @@ class DomainAdaptationModule(pl.LightningModule):
         heatmap_loss_source, heatmap_loss_target, _, _ = self.common_step(batch, batch_idx)
         return heatmap_loss_source, heatmap_loss_target
 
+    def manual_backward(self, loss, *args, **kwargs) -> None:
+        loss.backward()
+
     def training_step(self, batch, batch_idx):
+        optimizers = self.optimizers()
+
+        self.teacher_model.train()
+        self.student_model.train()
+
+        student_opt = optimizers[0]
+        teacher_opt = optimizers[1]
+
+        student_opt.zero_grad()
+        teacher_opt.zero_grad()
+
         heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
         total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
         self.log('train_heatmap_loss', heatmap_loss_source, on_step=True, on_epoch=True, logger=True)
         self.log('train_teacher_loss', heatmap_loss_target, on_step=True, on_epoch=True, logger=True)
         self.log('train_total_loss', total_loss, on_step=True, on_epoch=True, logger=True)
+        self.manual_backward(total_loss)
+
+        student_opt.step()
+        teacher_opt.step()
         return total_loss
 
     def validation_step(self, batch, batch_idx):
@@ -90,12 +112,10 @@ class DomainAdaptationModule(pl.LightningModule):
         return total_loss
 
     def configure_optimizers(self):
-        optimizer = self.partial_optimizer(params=self.student_model.parameters(), lr=self.lr)
+        optimizer_student = self.partial_optimizer(params=self.student_model.parameters(), lr=self.lr)
+        optimizer_teacher = EMAOptimizer(self.teacher_model, self.student_model)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer=optimizer, factor=0.5, patience=3, verbose=True, cooldown=2
+            optimizer=optimizer_student, factor=0.5, patience=3, verbose=True, cooldown=2
         )
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': scheduler,
-            'monitor': 'val_total_loss'
-        }
+        return [{"optimizer": optimizer_student, "lr_scheduler": scheduler, "monitor": "val_total_loss"},
+                {"optimizer": optimizer_teacher}]
