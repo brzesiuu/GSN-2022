@@ -4,7 +4,7 @@ import torch
 
 class DomainAdaptationModule(pl.LightningModule):
     def __init__(self, teacher_model, student_model, partial_optimizer, heatmap_loss, input_key, heatmaps_key,
-                 lr=None, style_net=None):
+                 lr=None, style_net=None, pretrain=None):
         super().__init__()
 
         self.save_hyperparameters()
@@ -20,6 +20,16 @@ class DomainAdaptationModule(pl.LightningModule):
         self.lr = 1e-1 if lr is None else lr
 
         self._alpha = 0.5
+        if pretrain:
+            self._apply_pretrained_weights(pretrain)
+
+    def _apply_pretrained_weights(self, pretrain):
+        weights = torch.load(pretrain)['state_dict']
+        model_dict = self.teacher_model.state_dict()
+
+        pretrained_dict = {k: v for k, v in weights.items() if k in model_dict}
+        self.teacher_model.load_state_dict(pretrained_dict, strict=False)
+        self.student_model.load_state_dict(pretrained_dict, strict=False)
 
     def forward(self, x):
         return self.student_model(x)
@@ -31,7 +41,7 @@ class DomainAdaptationModule(pl.LightningModule):
         return self.heatmap_loss(x, y)
 
     def compute_loss(self, heatmap_loss, discriminator_loss):
-        return self._alpha * heatmap_loss + (1-self._alpha) * discriminator_loss
+        return self._alpha * heatmap_loss + (1 - self._alpha) * discriminator_loss
 
     def common_step(self, batch, batch_idx):
         train_batch = batch["train_batch"]
@@ -47,7 +57,8 @@ class DomainAdaptationModule(pl.LightningModule):
         outputs_target_teacher = self.teacher_model(x_target_teacher)
 
         heatmap_loss_source = self.compute_heatmap_loss(outputs_source[self.heatmaps_key], heatmaps_source)
-        heatmap_loss_target = self.compute_heatmap_loss(outputs_target_student[self.heatmaps_key], outputs_target_teacher[self.heatmaps_key])
+        heatmap_loss_target = self.compute_heatmap_loss(outputs_target_student[self.heatmaps_key],
+                                                        outputs_target_teacher[self.heatmaps_key])
         return heatmap_loss_source, heatmap_loss_target, outputs_source, outputs_target_student
 
     def common_test_valid_step(self, batch, batch_idx):

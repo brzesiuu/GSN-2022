@@ -16,19 +16,19 @@ class MMPoseModel(nn.Module):
         except FileNotFoundError:
             path = str(Path(os.getcwd()).joinpath(config_path))
             tmp = init_model(path)
-        self._backbone = tmp.backbone
-        self._head = tmp.head
-        self._neck = tmp.neck if hasattr(tmp, 'neck') else None
+        self.backbone = tmp.backbone
+        self.keypoint_head = tmp.head
+        self.neck = tmp.neck if hasattr(tmp, 'neck') else None
         self._heatmaps_scale = 0.25
 
     def _forward_feature_extractor(self, x):
-        output = self._backbone(x)
-        if self._neck is not None:
-            output = self._neck(output)
+        output = self.backbone(x)
+        if self.neck is not None:
+            output = self.neck(output)
         return output
 
     def _forward_heatmaps_extractor(self, x):
-        output = self._head(x)
+        output = self.keypoint_head(x)
         return output
 
     @keypoints_2d
