@@ -16,6 +16,6 @@ class EMAOptimizer(object):
 
     def step(self):
         one_minus_alpha = 1.0 - self.alpha
-        for p, src_p in zip(self.teacher_params, self.source_params):
+        for p, src_p in zip(self.teacher_params, self.student_params):
             p.data.mul_(self.alpha)
             p.data.add_(src_p.data * one_minus_alpha)

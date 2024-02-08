@@ -21,7 +21,9 @@ class DomainAdaptationModule(pl.LightningModule):
         self.heatmaps_key = heatmaps_key
         self.lr = 1e-1 if lr is None else lr
 
-        self._alpha = 0.5
+        self._teacher_optimizer_ema = EMAOptimizer(self.teacher_model, self.student_model)
+
+        self._alpha = 1
         if pretrain:
             self._apply_pretrained_weights(pretrain)
 
@@ -44,8 +46,8 @@ class DomainAdaptationModule(pl.LightningModule):
     def compute_heatmap_loss(self, x, y):
         return self.heatmap_loss(x, y)
 
-    def compute_loss(self, heatmap_loss, discriminator_loss):
-        return self._alpha * heatmap_loss + (1 - self._alpha) * discriminator_loss
+    def compute_loss(self, heatmap_loss, teacher_loss):
+        return heatmap_loss + self._alpha * teacher_loss
 
     def common_step(self, batch, batch_idx):
         train_batch = batch["train_batch"]
@@ -78,11 +80,9 @@ class DomainAdaptationModule(pl.LightningModule):
         self.teacher_model.train()
         self.student_model.train()
 
-        student_opt = optimizers[0]
-        teacher_opt = optimizers[1]
+        student_opt = optimizers.optimizer
 
         student_opt.zero_grad()
-        teacher_opt.zero_grad()
 
         heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
         total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
@@ -92,7 +92,7 @@ class DomainAdaptationModule(pl.LightningModule):
         self.manual_backward(total_loss)
 
         student_opt.step()
-        teacher_opt.step()
+        self._teacher_optimizer_ema.step()
         return total_loss
 
     def validation_step(self, batch, batch_idx):
@@ -113,9 +113,7 @@ class DomainAdaptationModule(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer_student = self.partial_optimizer(params=self.student_model.parameters(), lr=self.lr)
-        optimizer_teacher = EMAOptimizer(self.teacher_model, self.student_model)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer_student, factor=0.5, patience=3, verbose=True, cooldown=2
         )
-        return [{"optimizer": optimizer_student, "lr_scheduler": scheduler, "monitor": "val_total_loss"},
-                {"optimizer": optimizer_teacher}]
+        return [{"optimizer": optimizer_student, "lr_scheduler": scheduler, "monitor": "val_total_loss"}]

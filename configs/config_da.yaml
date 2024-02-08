@@ -11,14 +11,12 @@ debug: true
 
 # Loss calculation params
 heatmap_loss:
-  _target_: losses.iou_loss.IoULoss
+  _target_: torch.nn.MSELoss
 
 input_key: 'image'
 output_key: 'heatmaps'
 lr: 0.001
 pck_ratio: 0.2
-
-pretrain: 'C:\\models\\checkpoints\\res50_freihand_224x224-ff0799bc_20200914.pth'
 
 # Dataset params
 batch_size: 12

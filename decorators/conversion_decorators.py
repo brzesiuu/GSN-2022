@@ -17,14 +17,15 @@ def keypoints_2d(function):
             if "scale" in result:
                 keypoints_2d *= result['scale']
             result["keypoints_2d"] = keypoints_2d
+            return result
         if 'heatmaps' in result:
             kp_2d = conversion_utils.get_keypoints_from_heatmaps(result['heatmaps'])
             if "heatmaps_scale" in result:
                 kp_2d /= result["heatmaps_scale"]
             result['keypoints_2d'] = kp_2d
+            return result
         else:
             raise ValueError('Could not find necessary data to calculate 2D keypoints!')
-        return result
 
     return wrapper
 
