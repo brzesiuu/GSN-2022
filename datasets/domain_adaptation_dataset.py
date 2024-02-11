@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 
 
-class DomainAdaptationDataset(Dataset):
+class SourceTargetDataset(Dataset):
     def __init__(self, train_dataset: Dataset, target_dataset: Dataset) -> None:
         self._train_dataset = train_dataset
         self._target_dataset = target_dataset

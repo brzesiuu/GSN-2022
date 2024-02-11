@@ -10,8 +10,8 @@ from omegaconf import DictConfig
 import torch
 from pytorch_lightning.callbacks import LearningRateFinder, LearningRateMonitor
 
-from lightning_modules.frei_pose_data_module import FreiPoseDataModule
-from lightning_modules.frei_pose_module import FreiPoseModule
+from lightning_modules.pose_data_module import PoseDataModule
+from lightning_modules.pose_module import PoseModule
 from utils.callbacks import ImagePredictionLogger, PCKCallback
 
 
@@ -35,9 +35,9 @@ def main(cfg: DictConfig) -> None:
     artifact.add_dir(output_dir)
     wandb.log_artifact(artifact)
 
-    train_module = FreiPoseModule(config.model, config.optimizer, config.loss, config.input_key, config.output_key,
-                                  lr=config.lr)
-    data_module = FreiPoseDataModule(config.batch_size, config.dataset, config.train_ratio)
+    train_module = PoseModule(config.model, config.optimizer, config.loss, config.input_key, config.output_key,
+                              lr=config.lr)
+    data_module = PoseDataModule(config.batch_size, config.dataset, config.train_ratio)
 
     val_samples = next(iter(data_module.val_dataloader()))
     train_samples = next(iter(data_module.train_dataloader()))

@@ -1,0 +1,12 @@
+_target_: datasets.FreiDataset
+folder_path: 'C:\\datasets\\FreiPose'
+set_type: 'training'
+image_extension: '.jpg'
+resize: 224
+original_size: 224
+transform:
+  _target_: transforms.DatasetTransform
+  value: IMAGE_NET
+denorm:
+  _target_: transforms.DatasetTransform
+  value: IMAGE_NET_INVERSE

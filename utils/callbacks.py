@@ -180,3 +180,48 @@ class PCKCallbackDA(Callback):
             pck_loss = self.loss(preds['keypoints_2d'], gt)
             pck.append(pck_loss)
         pl_module.log('PCK', np.mean(pck), prog_bar=True)
+
+
+class StylePredictionLogger(Callback):
+    def __init__(self, val_samples, train_samples, denorm=DatasetTransform.IMAGE_NET_INVERSE):
+        super().__init__()
+
+        self.val_imgs_source = val_samples['train_batch']
+        self.val_imgs_target = val_samples['target_batch']
+
+        self.train_imgs_source = train_samples['train_batch']
+        self.train_imgs_target = train_samples['target_batch']
+
+        self.denorm = denorm
+
+    def _get_prediction_visualizations(self, images):
+        output_images = []
+        for image in images:
+            image_norm = self.denorm.value(image)
+            image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
+            image_norm = (255 * image_norm).astype(np.uint8)[:, :, ::-1]
+            output_images.append(wandb.Image(image_norm))
+        return output_images
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        # Bring the tensors to CPU
+        val_imgs_source = self.val_imgs_source.to(device=pl_module.device)
+        val_imgs_target = self.val_imgs_target.to(device=pl_module.device)
+        train_imgs_source = self.train_imgs_source.to(device=pl_module.device)
+        train_imgs_target = self.train_imgs_target.to(device=pl_module.device)
+
+        _, _, preds_val_source = pl_module(val_imgs_source, val_imgs_target)
+        _,_, preds_train_source = pl_module(train_imgs_source, train_imgs_target)
+
+        images_val_target = self._get_prediction_visualizations(val_imgs_target)
+        images_train_target = self._get_prediction_visualizations(train_imgs_target)
+
+        images_val_source = self._get_prediction_visualizations(preds_val_source)
+        images_train_source = self._get_prediction_visualizations(preds_train_source)
+
+        trainer.logger.experiment.log({
+            "train_predictions_source": images_train_source,
+            "val_predictions_source": images_val_source,
+            "train_target": images_train_target,
+            "val_target": images_val_target,
+        })

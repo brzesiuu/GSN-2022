@@ -5,7 +5,7 @@ import torch
 
 
 class TransferNetworkModule(pl.LightningModule):
-    def __init__(self, transfer_network, partial_optimizer, loss, input_key, lr=None, pretrain=None, content_weight=1.0,
+    def __init__(self, transfer_network, partial_optimizer, loss, lr=None, pretrain=None, content_weight=1.0,
                  style_weight=1.0):
         super().__init__()
 
@@ -14,7 +14,6 @@ class TransferNetworkModule(pl.LightningModule):
         self.loss = loss
         self.partial_optimizer = partial_optimizer
 
-        self.input_key = input_key
         self.lr = 1e-1 if lr is None else lr
 
         if pretrain:
@@ -31,8 +30,8 @@ class TransferNetworkModule(pl.LightningModule):
         pretrained_dict = {k: v for k, v in weights.items() if k in model_dict}
         self.transfer_network.load_state_dict(pretrained_dict, strict=False)
 
-    def forward(self, x):
-        return self.transfer_network(x)
+    def forward(self, content, style):
+        return self.transfer_network(content, style)
 
     def compute_content_loss(self):
         pass
@@ -44,8 +43,8 @@ class TransferNetworkModule(pl.LightningModule):
         return self.style_weight * loss_style + self.content_weight * loss_content
 
     def common_step(self, batch, batch_idx):
-        source_images = batch["train_batch"]['image']
-        target_images = batch["target_batch"]['image']
+        source_images = batch["train_batch"]
+        target_images = batch["target_batch"]
 
         if random.random() > 0.5:
             content_images = source_images
@@ -67,8 +66,7 @@ class TransferNetworkModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         optimizers = self.optimizers()
 
-        self.teacher_model.train()
-        self.student_model.train()
+        self.transfer_network.train()
 
         optimizer = optimizers.optimizer
 
@@ -85,18 +83,18 @@ class TransferNetworkModule(pl.LightningModule):
         return total_loss
 
     def validation_step(self, batch, batch_idx):
-        heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
-        total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
-        self.log('val_heatmap_loss', heatmap_loss_source, prog_bar=True)
-        self.log('val_teacher_loss', heatmap_loss_target, prog_bar=True)
+        loss_content, loss_style = self.common_test_valid_step(batch, batch_idx)
+        total_loss = self.compute_loss(loss_content, loss_style)
+        self.log('val_content_loss', loss_content, prog_bar=True)
+        self.log('val_style_loss', loss_style, prog_bar=True)
         self.log('val_total_loss', total_loss, prog_bar=True)
         return total_loss
 
     def test_step(self, batch, batch_idx):
-        heatmap_loss_source, heatmap_loss_target = self.common_test_valid_step(batch, batch_idx)
-        total_loss = self.compute_loss(heatmap_loss_source, heatmap_loss_target)
-        self.log('test_heatmap_loss', heatmap_loss_source, prog_bar=True)
-        self.log('test_teacher_loss', heatmap_loss_target, prog_bar=True)
+        loss_content, loss_style = self.common_test_valid_step(batch, batch_idx)
+        total_loss = self.compute_loss(loss_content, loss_style)
+        self.log('test_content_loss', loss_content, prog_bar=True)
+        self.log('test_style_loss', loss_style, prog_bar=True)
         self.log('test_total_loss', total_loss, prog_bar=True)
         return total_loss
 

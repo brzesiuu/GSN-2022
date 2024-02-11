@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch
 
 
-class FreiPoseModule(pl.LightningModule):
+class PoseModule(pl.LightningModule):
     def __init__(self, model, partial_optimizer, loss, input_key, output_key, lr=None):
         super().__init__()
 

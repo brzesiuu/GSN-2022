@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 from torch.utils.data import random_split, DataLoader
 
 
-class FreiPoseDataModule(pl.LightningDataModule):
+class PoseDataModule(pl.LightningDataModule):
     def __init__(self, batch_size, dataset, train_ratio=0.9):
         super().__init__()
         train_dataset_size = int(len(dataset) * train_ratio)
