@@ -1,5 +1,5 @@
 # Adapted from https://github.com/VisionLearningGroup/UDA_PoseEstimation/blob/master/adain/net.py
-
+import torch
 import torch.nn as nn
 from utils.adain import adaptive_instance_normalization as adain, calc_mean_std
 
@@ -93,10 +93,13 @@ vgg = nn.Sequential(
 
 
 class StyleNetVGG(nn.Module):
-    def __init__(self):
+    def __init__(self, pretrained_vgg_path=None):
         super(StyleNetVGG, self).__init__()
-
-        enc_layers = list(vgg.children())
+        encoder = vgg
+        if pretrained_vgg_path:
+            encoder.load_state_dict(torch.load(pretrained_vgg_path))
+            encoder = nn.Sequential(*list(encoder.children())[:31])
+        enc_layers = list(encoder.children())
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1

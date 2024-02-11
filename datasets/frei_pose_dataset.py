@@ -15,7 +15,7 @@ from utils.enums import KeypointsMap
 
 class FreiDataset(Dataset):
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224,
+                 transform=None, resize=192, original_size=224,
                  denorm=None) -> None:
         """
         Class constructor
@@ -46,7 +46,7 @@ class FreiDataset(Dataset):
         image = standard_transforms.Compose(
             [standard_transforms.ToTensor(), standard_transforms.Resize((self._resize, self._resize))])(image)
 
-        return self._transform(image)
+        return self._transform(image) if self._transform is not None else image
 
 
 class FreiPoseDataset(FreiDataset):

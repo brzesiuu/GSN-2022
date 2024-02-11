@@ -1,6 +1,7 @@
 import functools
 
 import numpy as np
+import torch
 from pytorch_lightning import Callback
 import wandb
 
@@ -197,7 +198,9 @@ class StylePredictionLogger(Callback):
     def _get_prediction_visualizations(self, images):
         output_images = []
         for image in images:
-            image_norm = self.denorm.value(image)
+            image_norm = torch.clone(image)
+            if self.denorm is not None:
+                image_norm = self.denorm.value(image)
             image_norm = np.moveaxis(image_norm.cpu().numpy(), (0, 1, 2), (2, 0, 1))
             image_norm = (255 * image_norm).astype(np.uint8)[:, :, ::-1]
             output_images.append(wandb.Image(image_norm))

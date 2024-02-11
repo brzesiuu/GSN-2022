@@ -16,7 +16,7 @@ train_ratio: 0.96
 
 # Style transfer params
 content_weight: 1.0
-style_weight: 1.0
+style_weight: 0.1
 
 # Checkpoint callback
 checkpoint_callback:

@@ -1,1 +1,2 @@
 _target_: models.adain.style_transfer.StyleNetVGG
+pretrained_vgg_path: "C:\\models\\checkpoints\\vgg_normalised.pth"

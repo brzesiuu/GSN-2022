@@ -16,7 +16,7 @@ from utils.enums import KeypointsMap
 
 class RenderedDataset(Dataset):
     def __init__(self, folder_path, image_extension='.jpg',
-                 transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=320,
+                 transform=None, resize=192, original_size=320,
                  denorm=None, set_type='training') -> None:
         """
         Class constructor
@@ -43,7 +43,7 @@ class RenderedDataset(Dataset):
         image = cv.imread(str(self._image_paths[idx]))
         image = standard_transforms.Compose(
             [standard_transforms.ToTensor(), standard_transforms.Resize((self._resize, self._resize))])(image)
-        return self._transform(image)
+        return self._transform(image) if self._transform is not None else image
 
 
 class RenderedPoseDataset(RenderedDataset):

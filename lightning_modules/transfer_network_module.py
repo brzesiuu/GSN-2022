@@ -33,12 +33,6 @@ class TransferNetworkModule(pl.LightningModule):
     def forward(self, content, style):
         return self.transfer_network(content, style)
 
-    def compute_content_loss(self):
-        pass
-
-    def compute_style_loss(self):
-        pass
-
     def compute_loss(self, loss_style, loss_content):
         return self.style_weight * loss_style + self.content_weight * loss_content
 
@@ -50,8 +44,8 @@ class TransferNetworkModule(pl.LightningModule):
             content_images = source_images
             style_images = target_images
         else:
-            content_images = source_images
-            style_images = target_images
+            content_images = target_images
+            style_images = source_images
 
         loss_content, loss_style, g_t = self.transfer_network(content_images, style_images)
         return loss_content, loss_style, g_t
