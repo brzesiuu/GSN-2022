@@ -5,13 +5,12 @@ import torch
 
 
 class TransferNetworkModule(pl.LightningModule):
-    def __init__(self, transfer_network, partial_optimizer, loss, lr=None, pretrain=None, content_weight=1.0,
+    def __init__(self, transfer_network, partial_optimizer, lr=None, pretrain=None, content_weight=1.0,
                  style_weight=1.0):
         super().__init__()
 
         self.save_hyperparameters()
         self.transfer_network = transfer_network
-        self.loss = loss
         self.partial_optimizer = partial_optimizer
 
         self.lr = 1e-1 if lr is None else lr
