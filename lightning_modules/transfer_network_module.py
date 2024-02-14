@@ -23,11 +23,8 @@ class TransferNetworkModule(pl.LightningModule):
         self.style_weight = style_weight
 
     def _apply_pretrained_weights(self, pretrain):
-        weights = torch.load(pretrain)['state_dict']
-        model_dict = self.transfer_network.state_dict()
-
-        pretrained_dict = {k: v for k, v in weights.items() if k in model_dict}
-        self.transfer_network.load_state_dict(pretrained_dict, strict=False)
+        states = torch.load(pretrain)
+        self.transfer_network.decoder.load_state_dict(states)
 
     def forward(self, content, style):
         return self.transfer_network(content, style)
