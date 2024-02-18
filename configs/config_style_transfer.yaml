@@ -9,7 +9,7 @@ defaults:
 debug: true
 
 pretrain: "C:\\models\\checkpoints\\decoder_s2h_0_1.pth.tar"
-lr: 0.001
+lr: 0.0001
 
 # Dataset params
 batch_size: 12

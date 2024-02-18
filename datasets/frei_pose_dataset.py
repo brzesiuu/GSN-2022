@@ -56,7 +56,7 @@ class FreiPoseDataset(FreiDataset):
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
                  transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224,
-                 denorm=None, heatmaps_scale=None) -> None:
+                 denorm=None, heatmaps_scale=None, ignore_green_images=True) -> None:
         """
         Class constructor
         """
@@ -70,6 +70,11 @@ class FreiPoseDataset(FreiDataset):
                                                                                                 to_list=True)
         self._xyz_paths = PosePath(self._path).joinpath('training', 'data').pose_glob('*_xyz.json',
                                                                                       natsort=True, to_list=True)
+
+        if ignore_green_images:
+            self._image_paths = self._image_paths[32560:]
+            self._camera_matrix_paths = self._camera_matrix_paths[32560:]
+            self._xyz_paths = self._xyz_paths[32560:]
         self.keypoints_map = KeypointsMap.FreiPose
 
     @keypoints_2d
