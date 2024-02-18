@@ -5,6 +5,8 @@ image_extension: '.jpg'
 resize: 224
 original_size: 224
 heatmaps_scale: 0.25
+gaussian_kernel_size: 7
+ignore_green_images: True
 transform:
   _target_: transforms.DatasetTransform
   value: IMAGE_NET

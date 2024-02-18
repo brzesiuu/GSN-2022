@@ -4,6 +4,7 @@ set_type: 'training'
 image_extension: '.jpg'
 resize: 224
 original_size: 224
+ignore_green_images: True
 transform:
   _target_: transforms.DatasetTransform
   value: IMAGE_NET

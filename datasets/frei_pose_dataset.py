@@ -16,7 +16,7 @@ from utils.enums import KeypointsMap
 class FreiDataset(Dataset):
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
                  transform=None, resize=192, original_size=224,
-                 denorm=None) -> None:
+                 denorm=None, ignore_green_images=True) -> None:
         """
         Class constructor
         """
@@ -27,6 +27,8 @@ class FreiDataset(Dataset):
 
         self._image_paths = PosePath(self._path).joinpath('training', 'rgb').pose_glob('*' + image_extension,
                                                                                        natsort=True, to_list=True)
+        if ignore_green_images:
+            self._image_paths = self._image_paths[32560:]
         self._transform = transform if not isinstance(transform, Enum) else transform.value
         self.denorm = denorm
 
@@ -56,6 +58,7 @@ class FreiPoseDataset(FreiDataset):
 
     def __init__(self, folder_path, set_type='training', image_extension='.jpg',
                  transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=224,
+                 gaussian_kernel_size=7,
                  denorm=None, heatmaps_scale=None, ignore_green_images=True) -> None:
         """
         Class constructor
@@ -76,9 +79,10 @@ class FreiPoseDataset(FreiDataset):
             self._camera_matrix_paths = self._camera_matrix_paths[32560:]
             self._xyz_paths = self._xyz_paths[32560:]
         self.keypoints_map = KeypointsMap.FreiPose
+        self._gaussian_kernel_size = gaussian_kernel_size
 
     @keypoints_2d
-    @heatmaps(gaussian_kernel=7)
+    @heatmaps
     def __getitem__(self, idx: int) -> dict:
         coords = np.array(file_utils.load_config(self._xyz_paths[idx]), dtype=np.float32)
         camera_matrix = np.array(file_utils.load_config(self._camera_matrix_paths[idx]), dtype=np.float32)
@@ -98,5 +102,6 @@ class FreiPoseDataset(FreiDataset):
             'keypoints_3d_local': coords,
             'camera_matrix': camera_matrix,
             'scale': self._scale,
-            'heatmaps_scale': self._heatmaps_scale
+            'heatmaps_scale': self._heatmaps_scale,
+            'gaussian_kernel': self._gaussian_kernel_size
         }

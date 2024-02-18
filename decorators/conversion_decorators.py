@@ -30,9 +30,9 @@ def keypoints_2d(function):
     return wrapper
 
 
-def heatmaps(func=None, *, gaussian_kernel=None):
+def heatmaps(func=None):
     if func is None:
-        return functools.partial(heatmaps, gaussian_kernel=gaussian_kernel)
+        return functools.partial(heatmaps)
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -56,6 +56,7 @@ def heatmaps(func=None, *, gaussian_kernel=None):
 
             heatmaps_shape[-2] = round(heatmaps_shape[-2] * heatmaps_scale)
             heatmaps_shape[-1] = round(heatmaps_shape[-1] * heatmaps_scale)
-        result['heatmaps'] = conversion_utils.get_heatmaps(uv, heatmaps_shape, gaussian_kernel)
+        result['heatmaps'] = conversion_utils.get_heatmaps(uv, heatmaps_shape, result['gaussian_kernel'])
         return result
+
     return wrapper

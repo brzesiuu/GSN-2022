@@ -53,7 +53,7 @@ class RenderedPoseDataset(RenderedDataset):
 
     def __init__(self, folder_path, image_extension='.jpg',
                  transform=transforms.Compose([transforms.ToTensor()]), resize=192, original_size=320,
-                 denorm=None, set_type='training', heatmaps_scale=None) -> None:
+                 denorm=None, set_type='training', heatmaps_scale=None, gaussian_kernel_size=7) -> None:
         """
         Class constructor
         """
@@ -62,9 +62,10 @@ class RenderedPoseDataset(RenderedDataset):
         self._annotation_paths = PosePath(self._path).joinpath('annotations').pose_glob('*.json',
                                                                                         natsort=True, to_list=True)
         self.keypoints_map = KeypointsMap.RenderedPose
+        self._gaussian_kernel_size = gaussian_kernel_size
 
     @keypoints_2d
-    @heatmaps(gaussian_kernel=7)
+    @heatmaps
     def __getitem__(self, idx: int) -> (torch.Tensor, torch.Tensor):
         coords = np.array(file_utils.load_config(self._annotation_paths[idx]), dtype=np.float32)
 
@@ -82,5 +83,6 @@ class RenderedPoseDataset(RenderedDataset):
             'image': self._transform(image),
             'keypoints_2d': self._scale * (coords),
             'scale': self._scale,
-            'heatmaps_scale': self._heatmaps_scale
+            'heatmaps_scale': self._heatmaps_scale,
+            'gaussian_kernel': self._gaussian_kernel_size
         }
