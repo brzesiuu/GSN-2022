@@ -33,7 +33,7 @@ class CocoPoseDataset(Dataset):
         return len(self._json_paths)
 
     @keypoints_2d
-    @heatmaps(gaussian_kernel=7)
+    @heatmaps
     def __getitem__(self, idx: int) -> (torch.Tensor, torch.Tensor):
         data = file_utils.load_config(self._json_paths[idx])
         image = cv.imread(data["image_path"])
