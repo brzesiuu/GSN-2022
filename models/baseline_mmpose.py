@@ -2,13 +2,11 @@ import os
 from pathlib import Path
 
 from mmpose.apis import init_model
-import torch.nn as nn
 
-from decorators.conversion_decorators import keypoints_2d
 from models.base_model import BaseModel
 
 
-class MMPoseModel(nn.Module):
+class MMPoseModel(BaseModel):
     def __init__(self, config_path):
         super(MMPoseModel, self).__init__()
         try:
@@ -19,7 +17,6 @@ class MMPoseModel(nn.Module):
         self.backbone = tmp.backbone
         self.keypoint_head = tmp.head
         self.neck = tmp.neck if hasattr(tmp, 'neck') else None
-        self._heatmaps_scale = 0.25
 
     def _forward_feature_extractor(self, x):
         output = self.backbone(x)
@@ -31,15 +28,7 @@ class MMPoseModel(nn.Module):
         output = self.keypoint_head(x)
         return output
 
-    @keypoints_2d
-    def forward(self, x):
+    def _forward(self, x):
         x = self._forward_feature_extractor(x)
-        output = self._forward_heatmaps_extractor(x)
-        return {'heatmaps': output,
-                'heatmaps_scale': self._heatmaps_scale}
-
-
-
-
-
-
+        x = self._forward_heatmaps_extractor(x)
+        return x

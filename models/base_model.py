@@ -1,26 +1,20 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
+
+from torch import nn
 
 from decorators.conversion_decorators import keypoints_2d
 
 
-class BaseModel(ABC):
+class BaseModel(nn.Module):
     def __init__(self):
-        self._heatmaps_scale = None  # Needed for unification
+        super(BaseModel, self).__init__()
 
     @abstractmethod
-    def _forward_feature_extractor(self, x):
+    def _forward(self, x):
         pass
-
-    @abstractmethod
-    def _forward_heatmaps_extractor(self, x):
-        pass
-
-    def features(self, x):
-        return self._forward_feature_extractor(x)
 
     @keypoints_2d
     def forward(self, x):
-        x = self._forward_feature_extractor(x)
-        output = self._forward_heatmaps_extractor(x)
+        output = self._forward(x)
         return {'heatmaps': output,
-                'heatmaps_scale': self._heatmaps_scale}
+                'heatmaps_scale': output[0, 0].shape[0] / x[0, 0].shape[0]}
